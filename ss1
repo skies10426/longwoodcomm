@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Polyglot Translator — Italian, French & Spanish</title>
+<style>
+:root {
+--bg: #f4f6f9;
+--card: #ffffff;
+--text: #1a1a2e;
+--muted: #6b7280;
+--accent: #4f46e5;
+--accent-light: #e0e7ff;
+--border: #e5e7eb;
+--shadow: 0 10px 40px rgba(0,0,0,0.08);
+--radius: 16px;
+--green: #10b981;
+--orange: #f59e0b;
+--pink: #ec4899;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+background: var(--bg);
+color: var(--text);
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 40px 20px;
+}
+h1 {
+font-size: 2rem;
+font-weight: 700;
+margin-bottom: 6px;
+text-align: center;
+}
+.subtitle {
+color: var(--muted);
+margin-bottom: 32px;
+font-size: 0.95rem;
+}
+.container {
+width: 100%;
+max-width: 720px;
+}
+.card {
+background: var(--card);
+border-radius: var(--radius);
+box-shadow: var(--shadow);
+padding: 28px;
+margin-bottom: 20px;
+}
+.lang-row {
+display: flex;
+align-items: center;
+gap: 12px;
+margin-bottom: 16px;
+flex-wrap: wrap;
+}
+.lang-row label {
+font-size: 0.85rem;
+font-weight: 600;
+color: var(--muted);
+text-transform: uppercase;
+letter-spacing: 0.5px;
+}
+select {
+padding: 10px 14px;
+border-radius: 10px;
+border: 1px solid var(--border);
+background: var(--card);
+font-size: 0.95rem;
+color: var(--text);
+cursor: pointer;
+outline: none;
+transition: border-color 0.2s;
+}
+select:focus { border-color: var(--accent); }
+.swap-btn {
+background: var(--accent-light);
+border: none;
+width: 38px;
+height: 38px;
+border-radius: 50%;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+transition: transform 0.2s, background 0.2s;
+font-size: 1.1rem;
+}
+.swap-btn:hover { transform: rotate(180deg); background: #dbe4ff; }
+textarea {
+width: 100%;
+min-height: 120px;
+padding: 16px;
+border-radius: 12px;
+border: 1px solid var(--border);
+font-size: 1rem;
+resize: vertical;
+outline: none;
+transition: border-color 0.2s;
+font-family: inherit;
+}
+textarea:focus { border-color: var(--accent); }
+.output-wrap {
+position: relative;
+margin-top: 16px;
+}
+.output-wrap textarea {
+background: #fafafa;
+}
+.copy-btn {
+position: absolute;
+top: 10px;
+right: 10px;
+background: var(--card);
+border: 1px solid var(--border);
+padding: 6px 12px;
+border-radius: 8px;
+font-size: 0.8rem;
+cursor: pointer;
+color: var(--muted);
+transition: all 0.2s;
+}
+.copy-btn:hover {
+color: var(--accent);
+border-color: var(--accent);
+}
+.translate-btn {
+width: 100%;
+padding: 14px;
+margin-top: 16px;
+border: none;
+border-radius: 12px;
+background: var(--accent);
+color: white;
+font-size: 1rem;
+font-weight: 600;
+cursor: pointer;
+transition: background 0.2s, transform 0.1s;
+}
+.translate-btn:hover { background: #4338ca; }
+.translate-btn:active { transform: scale(0.98); }
+.tabs {
+display: flex;
+gap: 8px;
+margin-bottom: 16px;
+flex-wrap: wrap;
+}
+.tab {
+padding: 8px 16px;
+border-radius: 20px;
+border: 1px solid var(--border);
+background: var(--card);
+cursor: pointer;
+font-size: 0.9rem;
+transition: all 0.2s;
+}
+.tab.active {
+background: var(--accent);
+color: white;
+border-color: var(--accent);
+}
+.tab:hover:not(.active) { background: var(--accent-light); }
+.phrasebook {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+gap: 12px;
+margin-top: 12px;
+}
+.phrase {
+background: var(--bg);
+border-radius: 10px;
+padding: 12px 14px;
+cursor: pointer;
+transition: transform 0.15s, box-shadow 0.15s;
+font-size: 0.9rem;
+}
+.phrase:hover {
+transform: translateY(-2px);
+box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+.phrase .en { color: var(--muted); font-size: 0.8rem; margin-bottom: 4px; }
+.phrase .tr { font-weight: 600; }
+.badge-it { color: var(--green); }
+.badge-fr { color: var(--orange); }
+.badge-es { color: var(--pink); }
+.history-item {
+padding: 10px 14px;
+border-radius: 10px;
+background: var(--bg);
+margin-bottom: 8px;
+font-size: 0.9rem;
+cursor: pointer;
+transition: background 0.2s;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.history-item:hover { background: #e8ebf0; }
+.history-langs {
+font-size: 0.75rem;
+color: var(--muted);
+background: var(--card);
+padding: 2px 8px;
+border-radius: 12px;
+}
+.hidden { display: none; }
+.toast {
+position: fixed;
+bottom: 24px;
+left: 50%;
+transform: translateX(-50%) translateY(100px);
+background: var(--text);
+color: white;
+padding: 10px 20px;
+border-radius: 10px;
+font-size: 0.9rem;
+opacity: 0;
+transition: all 0.3s ease;
+z-index: 100;
+}
+.toast.show {
+opacity: 1;
+transform: translateX(-50%) translateY(0);
+}
+footer {
+margin-top: 20px;
+color: var(--muted);
+font-size: 0.8rem;
+text-align: center;
+}
+@media (max-width: 480px) {
+.lang-row { justify-content: center; }
+h1 { font-size: 1.5rem; }
+}
+</style>
+</head>
+<body>
+<h1>🌍 Polyglot Translator</h1>
+<p class="subtitle">Translate between Italian, French & Spanish instantly</p>
+
+<div class="container">
+<!-- Translator Card -->
+<div class="card">
+<div class="lang-row">
+<label>From</label>
+<select id="fromLang">
+<option value="it">🇮🇹 Italian</option>
+<option value="fr">🇫🇷 French</option>
+<option value="es">🇪🇸 Spanish</option>
+<option value="en">🇬🇧 English</option>
+</select>
+<button class="swap-btn" onclick="swapLangs()" title="Swap languages">⇄</button>
+<label>To</label>
+<select id="toLang">
+<option value="it">🇮🇹 Italian</option>
+<option value="fr" selected>🇫🇷 French</option>
+<option value="es">🇪🇸 Spanish</option>
+<option value="en">🇬🇧 English</option>
+</select>
+</div>
+
+<textarea id="inputText" placeholder="Type something to translate..."></textarea>
+
+<div class="output-wrap">
+<textarea id="outputText" readonly placeholder="Translation will appear here..."></textarea>
+<button class="copy-btn" onclick="copyOutput()">📋 Copy</button>
+</div>
+
+<button class="translate-btn" onclick="translateText()">Translate</button>
+</div>
+
+<!-- Phrasebook Card -->
+<div class="card">
+<h3 style="margin-bottom:12px;font-size:1.1rem;">📖 Quick Phrasebook</h3>
+<div class="tabs">
+<div class="tab active" onclick="setPhraseLang('it', this)">Italian</div>
+<div class="tab" onclick="setPhraseLang('fr', this)">French</div>
+<div class="tab" onclick="setPhraseLang('es', this)">Spanish</div>
+</div>
+<div id="phrasebook" class="phrasebook"></div>
+</div>
+
+<!-- History Card -->
+<div class="card">
+<h3 style="margin-bottom:12px;font-size:1.1rem;">🕘 Recent Translations</h3>
+<div id="historyList"></div>
+</div>
+</div>
+
+<div class="toast" id="toast">Copied to clipboard!</div>
+
+<footer>Built with vanilla HTML, CSS & JS — no external dependencies</footer>
+
+<script>
+// ── Dictionary (English → target) ──
+const dict = {
+it: {
+'hello':'ciao','good morning':'buongiorno','good evening':'buonasera',
+'good night':'buonanotte','goodbye':'arrivederci','please':'per favore',
+'thank you':'grazie','you\'re welcome':'prego','sorry':'scusa','yes':'sì','no':'no',
+'how are you':'come stai','what is your name':'come ti chiami','my name is':'mi chiamo',
+'nice to meet you':'piacere di conoscerti','i love you':'ti amo','help':'aiuto',
+'water':'acqua','food':'cibo','coffee':'caffè','bread':'pane','wine':'vino',
+'where is the bathroom':'dov\'è il bagno','how much is this':'quanto costa',
+'i don\'t understand':'non capisco','do you speak english':'parli inglese',
+'i\'m lost':'mi sono perso','call the police':'chiama la polizia','hospital':'ospedale',
+'train station':'stazione ferroviaria','airport':'aeroporto','hotel':'albergo',
+'restaurant':'ristorante','menu':'menu','bill':'conto','left':'sinistra',
+'right':'destra','straight ahead':'sempre dritto','near':'vicino','far':'lontano',
+'today':'oggi','tomorrow':'domani','yesterday':'ieri','now':'adesso','later':'più tardi',
+'good':'buono','bad':'cattivo','beautiful':'bello','big':'grande','small':'piccolo',
+'hot':'caldo','cold':'freddo','expensive':'caro','cheap':'economico'
+},
+fr: {
+'hello':'bonjour','good morning':'bonjour','good evening':'bonsoir',
+'good night':'bonne nuit','goodbye':'au revoir','please':'s\'il vous plaît',
+'thank you':'merci','you\'re welcome':'de rien','sorry':'pardon','yes':'oui','no':'non',
+'how are you':'comment allez-vous','what is your name':'comment vous appelez-vous',
+'my name is':'je m\'appelle','nice to meet you':'enchanté','i love you':'je t\'aime',
+'help':'aidez-moi','water':'eau','food':'nourriture','coffee':'café','bread':'pain',
+'wine':'vin','where is the bathroom':'où sont les toilettes','how much is this':'combien ça coûte',
+'i don\'t understand':'je ne comprends pas','do you speak english':'parlez-vous anglais',
+'i\'m lost':'je suis perdu','call the police':'appelez la police','hospital':'hôpital',
+'train station':'gare','airport':'aéroport','hotel':'hôtel','restaurant':'restaurant',
+'menu':'menu','bill':'l\'addition','left':'gauche','right':'droite',
+'straight ahead':'tout droit','near':'près','far':'loin','today':'aujourd\'hui',
+'tomorrow':'demain','yesterday':'hier','now':'maintenant','later':'plus tard',
+'good':'bon','bad':'mauvais','beautiful':'beau','big':'grand','small':'petit',
+'hot':'chaud','cold':'froid','expensive':'cher','cheap':'bon marché'
+},
+es: {
+'hello':'hola','good morning':'buenos días','good evening':'buenas tardes',
+'good night':'buenas noches','goodbye':'adiós','please':'por favor',
+'thank you':'gracias','you\'re welcome':'de nada','sorry':'lo siento','yes':'sí','no':'no',
+'how are you':'¿cómo estás','what is your name':'¿cómo te llamas','my name is':'me llamo',
+'nice to meet you':'mucho gusto','i love you':'te quiero','help':'ayuda',
+'water':'agua','food':'comida','coffee':'café','bread':'pan','wine':'vino',
+'where is the bathroom':'¿dónde está el baño','how much is this':'¿cuánto cuesta esto',
+'i don\'t understand':'no entiendo','do you speak english':'¿hablas inglés',
+'i\'m lost':'estoy perdido','call the police':'llama a la policía','hospital':'hospital',
+'train station':'estación de tren','airport':'aeropuerto','hotel':'hotel',
+'restaurant':'restaurante','menu':'menú','bill':'la cuenta','left':'izquierda',
+'right':'derecha','straight ahead':'todo recto','near':'cerca','far':'lejos',
+'today':'hoy','tomorrow':'mañana','yesterday':'ayer','now':'ahora','later':'más tarde',
+'good':'bueno','bad':'malo','beautiful':'hermoso','big':'grande','small':'pequeño',
+'hot':'caliente','cold':'frío','expensive':'caro','cheap':'barato'
+}
+};
+
+// Reverse dictionaries for non-English source
+const reverseDict = {};
+['it','fr','es'].forEach(lang => {
+reverseDict[lang] = {};
+Object.entries(dict[lang]).forEach(([en, tr]) => {
+reverseDict[lang][tr.toLowerCase()] = en;
+});
+});
+
+// Phrasebook data
+const phrases = [
+{en:'Hello', key:'hello'},
+{en:'Thank you', key:'thank you'},
+{en:'Please', key:'please'},
+{en:'Good morning', key:'good morning'},
+{en:'How are you?', key:'how are you'},
+{en:'My name is...', key:'my name is'},
+{en:'Where is the bathroom?', key:'where is the bathroom'},
+{en:'How much is this?', key:'how much is this'},
+{en:'I don\'t understand', key:'i don\'t understand'},
+{en:'Help!', key:'help'},
+{en:'Water', key:'water'},
+{en:'Coffee', key:'coffee'},
+{en:'Goodbye', key:'goodbye'},
+{en:'Nice to meet you', key:'nice to meet you'},
+{en:'I love you', key:'i love you'},
+{en:'Left', key:'left'},
+{en:'Right', key:'right'},
+{en:'Restaurant', key:'restaurant'},
+{en:'Hotel', key:'hotel'},
+{en:'Expensive', key:'expensive'},
+];
+
+let currentPhraseLang = 'it';
+let history = JSON.parse(localStorage.getItem('polyglot_history') || '[]');
+
+function renderPhrasebook() {
+const container = document.getElementById('phrasebook');
+container.innerHTML = '';
+const badgeClass = currentPhraseLang === 'it' ? 'badge-it' : currentPhraseLang === 'fr' ? 'badge-fr' : 'badge-es';
+phrases.forEach(p => {
+const tr = dict[currentPhraseLang][p.key];
+const div = document.createElement('div');
+div.className = 'phrase';
+div.innerHTML = `<div class="en">${p.en}</div><div class="tr ${badgeClass}">${tr}</div>`;
+div.onclick = () => {
+document.getElementById('inputText').value = p.en;
+document.getElementById('fromLang').value = 'en';
+document.getElementById('toLang').value = currentPhraseLang;
+translateText();
+};
+container.appendChild(div);
+});
+}
+
+function setPhraseLang(lang, el) {
+currentPhraseLang = lang;
+document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+el.classList.add('active');
+renderPhrasebook();
+}
+
+function swapLangs() {
+const from = document.getElementById('fromLang');
+const to = document.getElementById('toLang');
+const temp = from.value;
+from.value = to.value;
+to.value = temp;
+const inp = document.getElementById('inputText');
+const out = document.getElementById('outputText');
+if (out.value) {
+inp.value = out.value;
+translateText();
+}
+}
+
+function normalize(text) {
+return text.toLowerCase().trim().replace(/[?!.]+$/,'').replace(/\s+/g,' ');
+}
+
+function translateText() {
+const raw = document.getElementById('inputText').value;
+if (!raw.trim()) return;
+const from = document.getElementById('fromLang').value;
+const to = document.getElementById('toLang').value;
+const sentences = raw.split(/([.!?]+\s*)/).filter(s => s.trim());
+let result = [];
+
+for (let i = 0; i < sentences.length; i += 2) {
+let sentence = sentences[i];
+let punct = sentences[i+1] || '';
+let norm = normalize(sentence);
+let translated = '';
+
+if (from === 'en' && dict[to] && dict[to][norm]) {
+translated = dict[to][norm];
+} else if (to === 'en' && reverseDict[from] && reverseDict[from][norm]) {
+translated = reverseDict[from][norm];
+} else if (from === to) {
+translated = sentence;
+} else {
+// Try partial phrase matching
+let words = norm.split(' ');
+let outWords = [];
+let j = 0;
+while (j < words.length) {
+let found = false;
+for (let len = Math.min(5, words.length - j); len >= 1; len--) {
+let phrase = words.slice(j, j+len).join(' ');
+let match = null;
+if (from === 'en' && dict[to]) match = dict[to][phrase];
+else if (to === 'en' && reverseDict[from]) match = reverseDict[from][phrase];
+if (match) {
+outWords.push(match);
+j += len;
+found = true;
+break;
+}
+}
+if (!found) {
+outWords.push(words[j]);
+j++;
+}
+}
+translated = outWords.join(' ');
+// Capitalize first letter
+translated = translated.charAt(0).toUpperCase() + translated.slice(1);
+}
+
+// Preserve original casing style roughly
+if (sentence === sentence.toUpperCase()) translated = translated.toUpperCase();
+result.push(translated + punct);
+}
+
+const final = result.join(' ');
+document.getElementById('outputText').value = final;
+addToHistory(raw, final, from, to);
+}
+
+function addToHistory(original, translated, from, to) {
+const item = { original, translated, from, to, time: Date.now() };
+history.unshift(item);
+if (history.length > 20) history.pop();
+localStorage.setItem('polyglot_history', JSON.stringify(history));
+renderHistory();
+}
+
+function renderHistory() {
+const list = document.getElementById('historyList');
+if (!history.length) { list.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;">No translations yet.</div>'; return; }
+list.innerHTML = '';
+history.slice(0, 10).forEach(h => {
+const div = document.createElement('div');
+div.className = 'history-item';
+const flags = {en:'🇬🇧',it:'🇮🇹',fr:'🇫🇷',es:'🇪🇸'};
+div.innerHTML = `<span>${h.original.substring(0,40)}${h.original.length>40?'...':''}</span><span class="history-langs">${flags[h.from]} → ${flags[h.to]}</span>`;
+div.onclick = () => {
+document.getElementById('inputText').value = h.original;
+document.getElementById('fromLang').value = h.from;
+document.getElementById('toLang').value = h.to;
+document.getElementById('outputText').value = h.translated;
+};
+list.appendChild(div);
+});
+}
+
+function copyOutput() {
+const out = document.getElementById('outputText');
+if (!out.value) return;
+navigator.clipboard.writeText(out.value).then(() => showToast('Copied to clipboard!'));
+}
+
+function showToast(msg) {
+const t = document.getElementById('toast');
+t.textContent = msg;
+t.classList.add('show');
+setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Enter key to translate
+document.getElementById('inputText').addEventListener('keydown', e => {
+if (e.key === 'Enter' && e.ctrlKey) translateText();
+});
+
+// Init
+renderPhrasebook();
+renderHistory();
+</script>
+</body>
+</html>
