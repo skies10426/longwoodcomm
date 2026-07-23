@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New Tab</title>
+<style>
+:root{
+  --bg:#050505;
+  --card:#111111;
+  --border:#9d00ff;
+  --accent:#c77dff;
+  --white:#ffffff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:'Courier New', Courier, monospace;
+  font-weight:bold;
+  min-height:100vh;
+  overflow-x:hidden;
+  position:relative;
+}
+#starfield{
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  z-index:-1;background:var(--bg);
+}
+::selection{background:var(--accent);color:#000;}
+::-webkit-scrollbar{width:10px;}
+::-webkit-scrollbar-track{background:#000;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:0;}
+::-webkit-scrollbar-thumb:hover{background:var(--accent);}
+
+header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(5,5,5,0.92);
+  border-bottom:3px solid var(--border);
+  padding:14px 20px;
+  display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;
+  box-shadow:0 0 20px rgba(157,0,255,0.4);
+}
+.logo{
+  font-size:clamp(16px,3vw,26px);
+  font-weight:900;
+  letter-spacing:3px;
+  color:var(--accent);
+  text-shadow:0 0 6px var(--accent),0 0 14px var(--accent),0 0 2px #fff;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.logo:hover{animation:flicker 1.2s infinite;}
+@keyframes flicker{
+  0%,100%{opacity:1;}
+  45%{opacity:0.85;}
+  50%{opacity:0.5;}
+  55%{opacity:0.9;}
+}
+.header-controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;flex:1;justify-content:flex-end;}
+#homeBtn{
+  background:transparent;border:2px solid var(--border);color:var(--accent);
+  padding:8px 14px;cursor:pointer;font-family:inherit;font-size:13px;
+  text-transform:uppercase;letter-spacing:1px;transition:all .2s;
+}
+#homeBtn:hover{background:var(--accent);color:#000;box-shadow:0 0 12px var(--accent);}
+#searchBox{
+  background:#000;border:2px solid var(--border);color:var(--white);
+  padding:8px 12px;font-family:inherit;font-size:13px;min-width:200px;flex:1;max-width:340px;
+  outline:none;
+}
+#searchBox:focus{border-color:var(--accent);box-shadow:0 0 10px var(--accent);}
+#searchResults{
+  position:fixed;top:64px;right:20px;max-width:420px;width:90%;
+  max-height:70vh;overflow-y:auto;background:var(--card);
+  border:2px solid var(--accent);z-index:200;display:none;
+  box-shadow:0 0 25px rgba(199,125,255,0.45);
+}
+#searchResults.active{display:block;}
+.search-result-item{
+  padding:10px 14px;border-bottom:1px solid #222;cursor:default;
+}
+.search-result-item:last-child{border-bottom:none;}
+.search-result-item .sr-term{color:var(--accent);font-weight:bold;font-size:14px;}
+.search-result-item .sr-tag{
+  float:right;font-size:10px;color:#000;background:var(--border);
+  padding:2px 6px;text-transform:uppercase;
+}
+.search-result-item .sr-def{font-size:12px;color:#ccc;margin-top:4px;line-height:1.4;}
+.search-close{
+  position:sticky;top:0;background:var(--accent);color:#000;text-align:right;
+  padding:4px 10px;cursor:pointer;font-weight:bold;font-size:12px;
+}
+
+main{max-width:1200px;margin:0 auto;padding:30px 18px 80px;}
+
+.page{display:none;animation:fadein .35s ease;}
+.page.active{display:block;}
+@keyframes fadein{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+
+.page-title{
+  font-size:clamp(20px,4vw,32px);
+  color:var(--accent);
+  text-align:center;
+  text-shadow:0 0 10px var(--accent),0 0 2px #fff;
+  margin-bottom:8px;
+  letter-spacing:3px;
+  font-weight:900;
+  text-transform:uppercase;
+}
+.page-sub{
+  text-align:center;color:#c9a3ff;font-size:12px;margin-bottom:30px;
+  text-transform:uppercase;letter-spacing:1px;font-weight:bold;
+}
+
+/* HOME GRID */
+.menu-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:18px;
+}
+.menu-card{
+  background:var(--card);
+  border:2px solid var(--border);
+  padding:26px 16px;
+  text-align:center;
+  cursor:pointer;
+  position:relative;
+  transition:transform .18s, box-shadow .18s, border-color .18s;
+  overflow:hidden;
+}
+.menu-card::before{
+  content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;
+  background:linear-gradient(120deg,transparent,rgba(157,0,255,0.25),transparent);
+  transition:left .5s;
+}
+.menu-card:hover::before{left:100%;}
+.menu-card:hover{
+  transform:translateY(-6px) scale(1.03);
+  border-color:var(--accent);
+  box-shadow:0 0 22px rgba(199,125,255,0.6);
+}
+.menu-card .mc-icon{font-size:28px;display:block;margin-bottom:10px;filter:drop-shadow(0 0 6px var(--accent));}
+.menu-card .mc-label{
+  font-size:14px;color:var(--white);letter-spacing:1px;text-transform:uppercase;font-weight:900;
+}
+.menu-card .mc-count{
+  display:block;margin-top:6px;font-size:10px;color:var(--accent);opacity:.8;
+}
+
+/* BACK BUTTON */
+.back-btn{
+  display:inline-block;margin-bottom:20px;background:transparent;
+  border:2px solid var(--border);color:var(--accent);padding:8px 16px;
+  cursor:pointer;font-family:inherit;text-transform:uppercase;font-size:12px;letter-spacing:1px;
+  transition:all .2s;
+}
+.back-btn:hover{background:var(--accent);color:#000;box-shadow:0 0 12px var(--accent);}
+
+/* STUDY CARD GRID */
+.study-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+.study-card{
+  background:var(--card);border:2px solid var(--border);padding:16px;position:relative;
+  transition:box-shadow .2s, border-color .2s;
+}
+.study-card:hover{border-color:var(--accent);box-shadow:0 0 16px rgba(199,125,255,0.45);}
+.study-card .sc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px;}
+.study-card .sc-term{color:var(--accent);font-weight:900;font-size:15px;text-shadow:0 0 5px rgba(199,125,255,.6);}
+.study-card .sc-imp{
+  font-size:9px;padding:3px 7px;text-transform:uppercase;white-space:nowrap;height:fit-content;font-weight:bold;
+}
+.imp-High{background:#ff3366;color:#fff;font-weight:900;}
+.imp-Medium{background:#ffcc00;color:#000;font-weight:900;}
+.imp-Low{background:#9d00ff;color:#fff;font-weight:900;}
+.study-card .sc-def{font-size:13px;line-height:1.5;color:#f1e6ff;margin-bottom:10px;font-weight:bold;}
+.study-card .sc-unit{font-size:10px;color:#c9a3ff;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;font-weight:bold;}
+.copy-btn{
+  background:transparent;border:1px solid var(--border);color:var(--accent);
+  font-family:inherit;font-size:11px;padding:6px 10px;cursor:pointer;
+  text-transform:uppercase;letter-spacing:1px;transition:all .2s;
+}
+.copy-btn:hover{background:var(--accent);color:#000;}
+.copy-btn.copied{background:#00ff88;border-color:#00ff88;color:#000;}
+
+/* TOAST */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(100px);
+  background:var(--accent);color:#000;padding:12px 22px;font-weight:bold;
+  border:2px solid #fff;box-shadow:0 0 20px var(--accent);z-index:500;
+  transition:transform .3s ease; letter-spacing:1px;text-transform:uppercase;font-size:13px;
+}
+#toast.show{transform:translateX(-50%) translateY(0);}
+
+/* NOTES PAGE */
+#notesArea{
+  width:100%;min-height:400px;background:#000;border:2px solid var(--border);
+  color:var(--white);font-family:inherit;font-size:14px;padding:16px;resize:vertical;outline:none;line-height:1.6;
+}
+#notesArea:focus{border-color:var(--accent);box-shadow:0 0 12px var(--accent);}
+.notes-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.notes-toolbar button{
+  background:transparent;border:2px solid var(--border);color:var(--accent);
+  padding:8px 16px;cursor:pointer;font-family:inherit;text-transform:uppercase;font-size:12px;letter-spacing:1px;
+}
+.notes-toolbar button:hover{background:var(--accent);color:#000;box-shadow:0 0 12px var(--accent);}
+#notesStatus{font-size:11px;color:#c9a3ff;margin-top:8px;text-transform:uppercase;letter-spacing:1px;font-weight:bold;}
+
+/* TIMELINE */
+.timeline-wrap{position:relative;padding-left:26px;}
+.timeline-wrap::before{
+  content:"";position:absolute;left:6px;top:0;bottom:0;width:3px;background:var(--border);
+  box-shadow:0 0 8px var(--border);
+}
+.tl-item{position:relative;padding:14px 0 14px 24px;border-bottom:1px dashed #3a1c4d;}
+.tl-item::before{
+  content:"";position:absolute;left:-26px;top:20px;width:14px;height:14px;background:var(--accent);
+  border:2px solid #fff;border-radius:50%;box-shadow:0 0 10px var(--accent);
+}
+.tl-year{color:var(--accent);font-weight:bold;font-size:16px;text-shadow:0 0 6px var(--accent);}
+.tl-desc{font-size:13px;color:#f1e6ff;margin-top:4px;line-height:1.5;font-weight:bold;}
+
+/* CRAM SHEET */
+.cram-unit-block{margin-bottom:28px;}
+.cram-unit-title{
+  color:var(--accent);font-size:16px;text-transform:uppercase;letter-spacing:1px;
+  border-bottom:2px solid var(--border);padding-bottom:6px;margin-bottom:12px;
+}
+.cram-list{list-style:none;}
+.cram-list li{
+  padding:8px 0;border-bottom:1px solid #1a1a1a;font-size:13px;line-height:1.5;
+}
+.cram-list li b{color:var(--accent);}
+
+.empty-msg{text-align:center;color:#c9a3ff;padding:40px 0;font-size:13px;text-transform:uppercase;letter-spacing:1px;font-weight:bold;}
+
+footer{
+  text-align:center;padding:20px;color:#6b3a8f;font-size:11px;font-weight:bold;
+  border-top:2px solid var(--border);letter-spacing:1px;text-transform:uppercase;
+}
+
+@media (max-width:600px){
+  .menu-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+  .menu-card{padding:18px 10px;}
+  #searchResults{right:8px;left:8px;max-width:none;width:auto;}
+}
+</style>
+</head>
+<body>
+<canvas id="starfield"></canvas>
+
+<header>
+  <div class="logo" onclick="goHome()">⚡ GLOBAL HISTORY REGENTS MASTER GUIDE</div>
+  <div class="header-controls">
+    <input type="text" id="searchBox" placeholder="SEARCH TERMS, PEOPLE, EVENTS..." autocomplete="off">
+    <button id="homeBtn" onclick="goHome()">HOME</button>
+  </div>
+</header>
+
+<div id="searchResults"></div>
+
+<main>
+
+  <!-- HOME PAGE -->
+  <section id="page-home" class="page active">
+    <div class="page-title">Select a Unit</div>
+    <div class="page-sub">20 Units · +200 Terms · made by sskkies on tiktok</div>
+    <div class="menu-grid" id="homeGrid"></div>
+  </section>
+
+  <!-- UNIT PAGE (terms) -->
+  <section id="page-unit" class="page">
+    <button class="back-btn" onclick="goHome()">&#8592; BACK TO MENU</button>
+    <div class="page-title" id="unitTitle">UNIT</div>
+    <div class="page-sub" id="unitSub"></div>
+    <div class="study-grid" id="unitGrid"></div>
+  </section>
+
+  <!-- PEOPLE PAGE -->
+  <section id="page-people" class="page">
+    <button class="back-btn" onclick="goHome()">&#8592; BACK TO MENU</button>
+    <div class="page-title">Important People</div>
+    <div class="page-sub">Key figures every Regents student must know</div>
+    <div class="study-grid" id="peopleGrid"></div>
+  </section>
+
+  <!-- EVENTS PAGE -->
+  <section id="page-events" class="page">
+    <button class="back-btn" onclick="goHome()">&#8592; BACK TO MENU</button>
+    <div class="page-title">Important Events</div>
+    <div class="page-sub">Turning points across world history</div>
+    <div class="study-grid" id="eventsGrid"></div>
+  </section>
+
+  <!-- TIMELINE PAGE -->
+  <section id="page-timeline" class="page">
+    <button class="back-btn" onclick="goHome()">&#8592; BACK TO MENU</button>
+    <div class="page-title">Regents Timeline</div>
+    <div class="page-sub">1500 &mdash; Present</div>
+    <div class="timeline-wrap" id="timelineWrap"></div>
+  </section>
+
+  <!-- CRAM SHEET PAGE -->
+  <section id="page-cram" class="page">
+    <button class="back-btn" onclick="goHome()">&#8592; BACK TO MENU</button>
+    <div class="page-title">Regents Cram Sheet</div>
+    <div class="page-sub">HIGH-IMPORTANCE terms only, organized by unit</div>
+    <div id="cramContent"></div>
+  </section>
+
+  <!-- NOTES PAGE -->
+  <section id="page-notes" class="page">
+    <button class="back-btn" onclick="goHome()">&#8592; BACK TO MENU</button>
+    <div class="page-title">My Notes</div>
+    <div class="page-sub">Autosaves locally &mdash; nothing leaves your device</div>
+    <div class="notes-toolbar">
+      <button onclick="clearNotes()">CLEAR NOTES</button>
+      <button onclick="exportNotes()">EXPORT AS .TXT</button>
+    </div>
+    <textarea id="notesArea" placeholder="Type your notes here... they save automatically."></textarea>
+    <div id="notesStatus">All notes saved locally.</div>
+  </section>
+
+</main>
+
+<footer>Global History Regents Master Guide &mdash; 100% Offline Study Terminal</footer>
+
+<div id="toast">Copied!</div>
+
+<script>
+/* ============================================================
+   STARFIELD BACKGROUND
+============================================================ */
+(function(){
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  let w,h,stars=[];
+  function resize(){
+    w = canvas.width = window.innerWidth;
+    h = canvas.height = window.innerHeight;
+  }
+  function initStars(){
+    stars = [];
+    const count = Math.floor((w*h)/3500);
+    for(let i=0;i<count;i++){
+      stars.push({
+        x: Math.random()*w,
+        y: Math.random()*h,
+        r: Math.random()*1.6+0.3,
+        speed: Math.random()*0.4+0.05,
+        tw: Math.random()*Math.PI*2
+      });
+    }
+  }
+  function draw(){
+    ctx.fillStyle = '#050505';
+    ctx.fillRect(0,0,w,h);
+    for(const s of stars){
+      s.tw += 0.02;
+      const alpha = 0.5 + 0.5*Math.sin(s.tw);
+      ctx.beginPath();
+      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
+      ctx.fillStyle = `rgba(199,125,255,${alpha})`;
+      ctx.fill();
+      s.y += s.speed;
+      if(s.y > h){ s.y = 0; s.x = Math.random()*w; }
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', ()=>{resize();initStars();});
+  resize(); initStars(); draw();
+})();
+
+/* ============================================================
+   DATA: ~200 REGENTS TERMS  [term, definition, importance, unit]
+============================================================ */
+const UNITS = [
+  {id:"enlightenment", label:"Enlightenment", icon:"💡"},
+  {id:"frenchrev", label:"French Revolution", icon:"⚔️"},
+  {id:"latinam", label:"Latin American Revolutions", icon:"🗺️"},
+  {id:"indrev", label:"Industrial Revolution", icon:"⚙️"},
+  {id:"imperialism", label:"Imperialism", icon:"🌍"},
+  {id:"nationalism", label:"Nationalism", icon:"🚩"},
+  {id:"wwi", label:"WWI", icon:"💣"},
+  {id:"russianrev", label:"Russian Revolution", icon:"☭"},
+  {id:"wwii", label:"WWII", icon:"🎖️"},
+  {id:"coldwar", label:"Cold War", icon:"☢️"},
+  {id:"decolonization", label:"Decolonization", icon:"🕊️"},
+  {id:"china", label:"China", icon:"🐉"},
+  {id:"middleeast", label:"Middle East", icon:"🕌"},
+  {id:"africa", label:"Africa", icon:"🌅"},
+  {id:"humanrights", label:"Human Rights", icon:"🤝"},
+  {id:"vocab", label:"Regents Vocabulary", icon:"📖", meta:true},
+  {id:"people", label:"Important People", icon:"🧑‍🏫", meta:true},
+  {id:"events", label:"Important Events", icon:"📅", meta:true},
+  {id:"timeline", label:"Regents Timeline", icon:"📜", meta:true},
+  {id:"cram", label:"Regents Cram Sheet", icon:"📝", meta:true},
+  {id:"notes", label:"Notes", icon:"🗒️", meta:true}
+];
+
+const TERMS = [
+["Enlightenment","Intellectual movement of the 17th-18th centuries emphasizing reason, science, and individual rights over tradition and religious authority.","High","enlightenment"],
+["John Locke","English philosopher who argued for natural rights (life, liberty, property) and government based on the consent of the governed.","High","enlightenment"],
+["Social Contract","The idea that government is an agreement between rulers and the people, who trade some freedom for protection of their rights.","High","enlightenment"],
+["Voltaire","French philosophe who championed freedom of speech and religious tolerance while attacking the Church and absolutism.","High","enlightenment"],
+["Montesquieu","Advocated separating government into three branches (legislative, executive, judicial) to prevent any one group from gaining too much power.","High","enlightenment"],
+["Jean-Jacques Rousseau","Argued for the 'general will' of the people and direct democracy in 'The Social Contract.'","High","enlightenment"],
+["Natural Rights","Rights believed to belong to all humans simply by being born, such as life, liberty, and property.","High","enlightenment"],
+["Absolutism","A system of government in which a monarch holds total, unchecked power over the state.","Medium","enlightenment"],
+["Salons","Informal gatherings, often hosted by women, where philosophes exchanged and debated Enlightenment ideas.","Medium","enlightenment"],
+["Scientific Revolution","Period of new discoveries in astronomy and physics (Galileo, Newton) that promoted reason and observation, inspiring the Enlightenment.","High","enlightenment"],
+["Divine Right of Kings","The belief that a monarch's authority to rule comes directly from God, challenged by Enlightenment thinkers.","Medium","enlightenment"],
+["Separation of Powers","Dividing government authority among separate branches to prevent tyranny, proposed by Montesquieu.","High","enlightenment"],
+["Philosophes","French Enlightenment writers and thinkers who promoted reason, science, and reform.","Medium","enlightenment"],
+["Deism","Enlightenment-era belief in a distant creator God who does not actively intervene in worldly affairs.","Low","enlightenment"],
+
+["Estates System","France's rigid social hierarchy before the Revolution: clergy (First Estate), nobility (Second Estate), and commoners (Third Estate).","High","frenchrev"],
+["Estates-General","An assembly of representatives from all three estates, called by Louis XVI in 1789 due to financial crisis.","High","frenchrev"],
+["Tennis Court Oath","Pledge made by Third Estate delegates in 1789 to keep meeting until a new constitution was written.","High","frenchrev"],
+["Storming of the Bastille","July 14, 1789 attack on a Paris prison/armory, symbolizing the start of the French Revolution.","High","frenchrev"],
+["Declaration of the Rights of Man","1789 French document proclaiming liberty, equality, and fraternity as fundamental rights.","High","frenchrev"],
+["Reign of Terror","1793-94 period of mass arrests and executions led by Robespierre to crush enemies of the Revolution.","High","frenchrev"],
+["Maximilien Robespierre","Radical Jacobin leader who directed the Reign of Terror before being executed himself.","High","frenchrev"],
+["Jacobins","Radical political club that pushed for a republic and supported the Reign of Terror.","Medium","frenchrev"],
+["Napoleon Bonaparte","Military general who seized power after the Revolution, crowned himself emperor, and conquered much of Europe.","High","frenchrev"],
+["Napoleonic Code","Legal code established by Napoleon guaranteeing legal equality and ending feudal privileges across his empire.","High","frenchrev"],
+["Congress of Vienna","1814-15 meeting of European powers to restore monarchies and balance of power after Napoleon's defeat.","High","frenchrev"],
+["Louis XVI","French king whose financial mismanagement helped spark the Revolution; executed by guillotine in 1793.","Medium","frenchrev"],
+["Third Estate","The commoners of France, about 97% of the population, who bore the heaviest tax burden.","High","frenchrev"],
+["Levee en Masse","French policy of mass conscription that created a huge citizen army during the Revolution.","Low","frenchrev"],
+
+["Simon Bolivar","'The Liberator'; led independence movements across northern South America (Venezuela, Colombia, Ecuador, Bolivia).","High","latinam"],
+["Jose de San Martin","Led independence movements across southern South America, including Argentina, Chile, and Peru.","High","latinam"],
+["Toussaint L'Ouverture","Led the Haitian Revolution, the first successful slave revolt that resulted in independence.","High","latinam"],
+["Haitian Revolution","1791-1804 slave uprising in French Saint-Domingue that created Haiti, the first Black republic.","High","latinam"],
+["Creoles","People of European descent born in the Americas who led most Latin American independence movements.","High","latinam"],
+["Peninsulares","Spanish-born colonists who held the highest social and political status in colonial Latin America.","Medium","latinam"],
+["Mestizo","A person of mixed European and Native American ancestry in colonial Latin American society.","Medium","latinam"],
+["Miguel Hidalgo","Mexican priest who launched the independence movement with the 'Grito de Dolores' in 1810.","Medium","latinam"],
+["Caudillos","Military strongmen who took power and ruled many Latin American nations after independence.","Medium","latinam"],
+["Monroe Doctrine","1823 U.S. policy declaring opposition to further European colonization or intervention in the Americas.","Medium","latinam"],
+["Encomienda System","Spanish colonial system granting settlers the right to demand labor/tribute from indigenous peoples.","Medium","latinam"],
+["Casta System","Colonial Spanish American social hierarchy based on race and ancestry.","Low","latinam"],
+["Gran Colombia","Short-lived republic created by Bolivar uniting present-day Venezuela, Colombia, Ecuador, and Panama.","Low","latinam"],
+
+["Industrial Revolution","Shift from agrarian, hand-made production to machine-based, factory production, beginning in Britain in the 1700s.","High","indrev"],
+["Factory System","Manufacturing method that centralized production in one location using machinery and division of labor.","High","indrev"],
+["Urbanization","Growth of cities as people migrated from farms to work in factories during industrialization.","High","indrev"],
+["Adam Smith","Economist who advocated capitalism, free markets, and the 'invisible hand' in 'The Wealth of Nations.'","High","indrev"],
+["Karl Marx","Developed communist theory and critiqued capitalism in 'The Communist Manifesto,' predicting workers would revolt.","High","indrev"],
+["Capitalism","Economic system based on private ownership of production and free-market competition.","High","indrev"],
+["Socialism","Economic system advocating collective or government ownership/control of the means of production.","High","indrev"],
+["Laissez-faire","Economic policy of minimal government interference in business and markets.","High","indrev"],
+["Labor Unions","Organizations formed by workers to demand better wages, hours, and working conditions.","Medium","indrev"],
+["Steam Engine","Key industrial invention that powered factories, trains, and ships, transforming production and transportation.","Medium","indrev"],
+["Child Labor","Widespread use of children in dangerous factory work during industrialization, which led to reform laws.","Medium","indrev"],
+["Bourgeoisie","The middle class who owned factories/businesses, according to Marx's class analysis.","Medium","indrev"],
+["Proletariat","The industrial working class who, according to Marx, would eventually revolt against the bourgeoisie.","Medium","indrev"],
+["Enclosure Movement","Fencing off of common farmland in Britain, forcing many peasants to move to cities for work.","Low","indrev"],
+
+["Imperialism","Policy of extending a nation's power and influence through colonization, military force, or economic dominance.","High","imperialism"],
+["Berlin Conference","1884-85 meeting where European powers divided Africa into colonies without any African representation.","High","imperialism"],
+["Social Darwinism","Misapplication of Darwin's 'survival of the fittest' to justify imperialism and racial hierarchies.","High","imperialism"],
+["White Man's Burden","Idea, popularized by Kipling, that Europeans had a duty to 'civilize' colonized peoples.","High","imperialism"],
+["Sepoy Mutiny","1857 revolt of Indian soldiers against the British East India Company, leading to direct British Crown rule.","High","imperialism"],
+["Raw Materials","Natural resources extracted from colonies to supply industrial economies in Europe.","High","imperialism"],
+["Cecil Rhodes","British imperialist who expanded British control across southern Africa and promoted colonial expansion.","Medium","imperialism"],
+["Boer War","Conflict (1899-1902) between British forces and Dutch settlers (Boers) for control of South Africa.","Medium","imperialism"],
+["Direct Rule","Colonial system in which European officials directly governed a colony, common in French colonies.","Medium","imperialism"],
+["Indirect Rule","Colonial system using local rulers/leaders to govern under European oversight, common in British colonies.","Medium","imperialism"],
+["Opium Wars","19th-century conflicts between Britain and China over trade and the opium trade, forcing China to open its ports.","High","imperialism"],
+["Sphere of Influence","An area where an outside power claims exclusive trade and investment rights without direct colonization.","Medium","imperialism"],
+["Unequal Treaties (China)","Treaties forced on China after the Opium Wars, granting foreign powers trade and legal privileges.","Medium","imperialism"],
+["Suez Canal","Waterway connecting the Mediterranean and Red Seas, a critical asset for European imperial trade routes.","Low","imperialism"],
+
+["Nationalism","Strong devotion and loyalty to one's nation and belief that people who share a culture deserve self-rule.","High","nationalism"],
+["Otto von Bismarck","Prussian chancellor who unified Germany through 'blood and iron,' using war and diplomacy.","High","nationalism"],
+["Franco-Prussian War","1870-71 war between France and Prussia that resulted in the unification of Germany.","High","nationalism"],
+["Giuseppe Garibaldi","Italian nationalist who led his 'Red Shirts' to help unify southern Italy.","High","nationalism"],
+["Camillo di Cavour","Prime Minister of Piedmont-Sardinia who used diplomacy and war to unify northern Italy.","High","nationalism"],
+["Zionism","Jewish nationalist movement, led by Theodor Herzl, advocating for a Jewish homeland in Palestine.","High","nationalism"],
+["The Balkans","Region called the 'powder keg of Europe' due to intense ethnic nationalism and rivalries before WWI.","Medium","nationalism"],
+["Self-Determination","The right of a people who share a culture or ethnicity to form their own independent nation.","High","nationalism"],
+["Pan-Slavism","Nationalist movement promoting unity and solidarity among Slavic peoples, especially in Eastern Europe.","Low","nationalism"],
+["Kaiser Wilhelm I","First emperor of the newly unified German Empire in 1871.","Low","nationalism"],
+["Risorgimento","19th-century movement for the unification and independence of Italy.","Medium","nationalism"],
+["Ethnic Nationalism","A sense of identity and political loyalty based on shared ethnicity, language, or culture.","Medium","nationalism"],
+
+["Militarism","Policy of aggressively building up military strength; one of the MAIN causes of WWI.","High","wwi"],
+["Alliance System","Network of secretive, entangling treaties (Triple Alliance/Triple Entente) that drew nations into WWI.","High","wwi"],
+["Imperialism (WWI Cause)","Competition among European powers for colonies increased rivalry and tension before WWI.","Medium","wwi"],
+["Nationalism (WWI Cause)","Ethnic pride and rivalries, especially in the Balkans, helped ignite WWI.","High","wwi"],
+["Assassination of Franz Ferdinand","The June 1914 killing of the Austro-Hungarian archduke in Sarajevo that sparked WWI.","High","wwi"],
+["Trench Warfare","Defensive fighting style along fixed lines on the Western Front, causing enormous casualties and stalemate.","High","wwi"],
+["Total War","Mobilization of an entire nation's population, industry, and resources to support a war effort.","High","wwi"],
+["Treaty of Versailles","1919 treaty ending WWI that blamed Germany for the war and imposed harsh reparations and territorial losses.","High","wwi"],
+["War Guilt Clause","Article 231 of the Treaty of Versailles, forcing Germany to accept full blame for WWI.","High","wwi"],
+["Woodrow Wilson","U.S. President who proposed the Fourteen Points and pushed for the League of Nations.","High","wwi"],
+["League of Nations","International organization created after WWI to prevent future wars; weakened by lack of U.S. membership.","High","wwi"],
+["Lusitania","British passenger ship sunk by a German U-boat in 1915, helping turn U.S. opinion against Germany.","Medium","wwi"],
+["Zimmermann Telegram","Secret German proposal to Mexico that helped push the U.S. into WWI once revealed.","Medium","wwi"],
+["Fourteen Points","Woodrow Wilson's peace plan emphasizing self-determination, open diplomacy, and a League of Nations.","High","wwi"],
+
+["Russian Revolution of 1917","Overthrow of the Russian tsarist autocracy, leading eventually to Bolshevik/Communist rule.","High","russianrev"],
+["Tsar Nicholas II","Last Russian tsar, whose weak leadership and WWI losses led to his abdication in 1917.","High","russianrev"],
+["Bloody Sunday","1905 massacre of peaceful protesters by tsarist troops, increasing revolutionary sentiment in Russia.","Medium","russianrev"],
+["Vladimir Lenin","Leader of the Bolsheviks who seized power in 1917 and established the world's first Communist state.","High","russianrev"],
+["Bolsheviks","Radical Marxist political party, led by Lenin, that seized power in the October Revolution of 1917.","High","russianrev"],
+["Communism","Political/economic system based on a classless society with collective ownership of production, per Marx and Lenin.","High","russianrev"],
+["Provisional Government","Temporary Russian government formed after the tsar's fall, overthrown by the Bolsheviks in October 1917.","Medium","russianrev"],
+["Treaty of Brest-Litovsk","1918 treaty in which Russia exited WWI, ceding significant territory to Germany.","Medium","russianrev"],
+["Joseph Stalin","Soviet dictator after Lenin who forced rapid industrialization, collectivization, and violent political purges.","High","russianrev"],
+["Five-Year Plans","Stalin's economic plans aimed at rapidly industrializing the Soviet Union.","High","russianrev"],
+["Collectivization","Stalin's forced consolidation of individual farms into government-controlled collective farms, causing famine.","High","russianrev"],
+["Command Economy","Economic system where the government makes all major decisions about production and distribution.","Medium","russianrev"],
+["Great Purge","Stalin's campaign of political repression and mass execution to eliminate rivals in the 1930s.","Medium","russianrev"],
+
+["Rise of Hitler","Adolf Hitler exploited German resentment over the Treaty of Versailles and economic crisis to gain power.","High","wwii"],
+["Adolf Hitler","Nazi dictator of Germany who started WWII in Europe and orchestrated the Holocaust.","High","wwii"],
+["Totalitarianism","A system of government in which the state holds total control over public and private life.","High","wwii"],
+["Fascism","Authoritarian, ultranationalist ideology led by figures like Mussolini and Hitler, opposing communism/democracy.","High","wwii"],
+["Appeasement","Policy of conceding to an aggressor's demands to avoid conflict, used with Hitler before WWII.","High","wwii"],
+["Munich Conference","1938 meeting where Britain and France allowed Hitler to annex the Sudetenland to avoid war.","Medium","wwii"],
+["Blitzkrieg","'Lightning war' military tactic using fast, coordinated attacks with tanks and aircraft.","Medium","wwii"],
+["The Holocaust","Nazi Germany's systematic genocide of six million Jews and millions of other victims.","High","wwii"],
+["Pearl Harbor","December 1941 surprise Japanese attack on a U.S. naval base that brought the U.S. into WWII.","High","wwii"],
+["D-Day","June 1944 Allied invasion of Normandy, France, a major turning point in the European war.","High","wwii"],
+["Axis Powers","WWII alliance of Germany, Italy, and Japan.","Medium","wwii"],
+["Allied Powers","WWII alliance including the United States, Britain, the Soviet Union, and France.","Medium","wwii"],
+["Manhattan Project","Secret U.S. program during WWII that developed the atomic bomb.","Medium","wwii"],
+["Hiroshima and Nagasaki","Japanese cities destroyed by U.S. atomic bombs in 1945, ending WWII in the Pacific.","High","wwii"],
+
+["Cold War","Period of political and military tension between the U.S. and USSR without direct large-scale combat (1947-1991).","High","coldwar"],
+["Containment","U.S. foreign policy strategy aimed at stopping the spread of communism worldwide.","High","coldwar"],
+["Iron Curtain","Term Churchill used to describe the division between democratic Western Europe and Soviet-controlled Eastern Europe.","High","coldwar"],
+["Truman Doctrine","U.S. pledge to provide support to any nation resisting communist takeover.","High","coldwar"],
+["Marshall Plan","U.S. program providing massive economic aid to rebuild Western Europe after WWII, countering communism.","High","coldwar"],
+["NATO","North Atlantic Treaty Organization; Western military alliance formed to counter the Soviet threat.","High","coldwar"],
+["Warsaw Pact","Soviet-led military alliance of Eastern Bloc countries formed to counter NATO.","Medium","coldwar"],
+["Berlin Wall","Barrier built in 1961 dividing East and West Berlin, a powerful symbol of Cold War division.","High","coldwar"],
+["Cuban Missile Crisis","1962 confrontation between the U.S. and USSR over Soviet nuclear missiles placed in Cuba.","High","coldwar"],
+["Korean War","1950-53 conflict between communist North Korea and democratic South Korea, ending in stalemate.","Medium","coldwar"],
+["Vietnam War","Long conflict resulting from the spread of communism in Southeast Asia, involving major U.S. intervention.","Medium","coldwar"],
+["Domino Theory","Belief that if one country fell to communism, neighboring countries would quickly follow.","High","coldwar"],
+["Arms Race","Cold War competition between the U.S. and USSR to build up ever-larger nuclear arsenals.","Medium","coldwar"],
+["Detente","Period of eased tensions and improved relations between the U.S. and the Soviet Union in the 1970s.","Medium","coldwar"],
+["Mikhail Gorbachev","Soviet leader whose reforms (glasnost and perestroika) contributed to the end of the Cold War.","High","coldwar"],
+
+["Decolonization","Post-WWII process by which former colonies gained independence from European imperial powers.","High","decolonization"],
+["Mohandas Gandhi","Led India's independence movement through nonviolent resistance and civil disobedience.","High","decolonization"],
+["Civil Disobedience","Gandhi's tactic of peacefully refusing to obey unjust laws to achieve political change.","High","decolonization"],
+["Partition of India","1947 division of British India into the independent nations of India and Pakistan, causing mass violence.","High","decolonization"],
+["Jawaharlal Nehru","First Prime Minister of independent India.","Medium","decolonization"],
+["Indian National Congress","Political party that led India's long independence movement against British rule.","Medium","decolonization"],
+["Kwame Nkrumah","Led Ghana to independence in 1957, the first Sub-Saharan African nation to decolonize.","Medium","decolonization"],
+["Pan-Africanism","Movement promoting unity, solidarity, and cooperation among African peoples and nations.","Medium","decolonization"],
+["Algerian War of Independence","Violent, prolonged conflict (1954-62) in which Algeria won independence from France.","Medium","decolonization"],
+["Ho Chi Minh","Led the Vietnamese independence and communist movement, first against France, then the U.S.","High","decolonization"],
+["Negritude Movement","Literary and cultural movement affirming pride in Black African identity and heritage.","Low","decolonization"],
+["Non-Aligned Movement","Group of nations during the Cold War that chose not to formally ally with the U.S. or USSR.","Medium","decolonization"],
+
+["Opium Wars (China)","19th-century wars that forced China to open its ports and make major concessions to Western powers.","High","china"],
+["Unequal Treaties","Agreements forced on China granting foreign powers trade, legal, and territorial privileges.","High","china"],
+["Boxer Rebellion","1900 Chinese uprising aiming to expel foreign influence and missionaries from China.","Medium","china"],
+["Sun Yat-sen","Led the revolution that ended the Qing Dynasty and founded the Republic of China in 1912.","High","china"],
+["Chinese Civil War","Conflict between the Nationalists (Chiang Kai-shek) and the Communists (Mao Zedong) for control of China.","High","china"],
+["Mao Zedong","Led the Chinese Communist Party to victory in 1949, founding the People's Republic of China.","High","china"],
+["Great Leap Forward","Mao's failed 1958-62 plan for rapid industrialization and collectivization that caused mass famine.","High","china"],
+["Cultural Revolution","Mao's 1966-76 campaign to purge capitalist and traditional elements from Chinese society and government.","High","china"],
+["Deng Xiaoping","Chinese leader who introduced market-based economic reforms (Four Modernizations) after Mao's death.","High","china"],
+["Tiananmen Square","Site of 1989 pro-democracy protests in Beijing that were violently suppressed by the government.","High","china"],
+["One-Child Policy","Chinese government population-control policy limiting most families to one child, in effect 1979-2015.","Medium","china"],
+["Special Economic Zones","Designated areas in China with capitalist-style economic policies to attract foreign investment.","Medium","china"],
+
+["Balfour Declaration","1917 British statement expressing support for a Jewish homeland in Palestine.","High","middleeast"],
+["Zionism (Middle East)","Nationalist movement for a Jewish homeland that culminated in the creation of Israel in 1948.","High","middleeast"],
+["Arab-Israeli Conflict","Series of wars and ongoing disputes over land and sovereignty between Israel and its Arab neighbors.","High","middleeast"],
+["Six-Day War","1967 war in which Israel decisively defeated Arab neighbors and captured significant new territory.","Medium","middleeast"],
+["OPEC","Organization of Petroleum Exporting Countries; oil-producing nations with major influence over global oil prices.","Medium","middleeast"],
+["Iranian Revolution","1979 overthrow of the Shah of Iran, leading to an Islamic Republic under Ayatollah Khomeini.","High","middleeast"],
+["Ayatollah Khomeini","Religious leader who led Iran's 1979 revolution and established a theocratic government.","Medium","middleeast"],
+["Sunni-Shia Split","Historic division within Islam over succession after Muhammad's death, a continuing source of regional conflict.","Medium","middleeast"],
+["Gulf War","1991 U.S.-led coalition war against Iraq following its invasion of Kuwait.","Medium","middleeast"],
+["Camp David Accords","1978 peace agreement between Egypt and Israel, brokered by the United States.","Medium","middleeast"],
+["Suez Crisis","1956 international conflict over control of the Suez Canal.","Low","middleeast"],
+
+["Apartheid","South African system of legalized racial segregation and discrimination against non-white citizens.","High","africa"],
+["Nelson Mandela","Led the anti-apartheid movement, was imprisoned for 27 years, and became South Africa's first Black president.","High","africa"],
+["African National Congress","Political party that led the long struggle against apartheid in South Africa.","Medium","africa"],
+["Rwandan Genocide","1994 mass killing of the Tutsi minority by Hutu extremists, killing roughly 800,000 people.","High","africa"],
+["Ethnic Conflict in Africa","Post-colonial violence often rooted in arbitrary borders drawn by European powers that ignored ethnic groups.","High","africa"],
+["Biafra","Igbo secessionist state whose failed independence bid caused the devastating Nigerian Civil War.","Low","africa"],
+["Congo Crisis","Political instability and violent conflict that followed the Congo's independence from Belgium.","Low","africa"],
+["Truth and Reconciliation Commission","South African body that investigated and addressed crimes committed during apartheid.","Medium","africa"],
+
+["Human Rights","Basic rights and freedoms believed to belong to every person, regardless of nationality or status.","High","humanrights"],
+["Universal Declaration of Human Rights","1948 UN document outlining fundamental rights owed to all people.","High","humanrights"],
+["Genocide","The deliberate, systematic destruction of a racial, ethnic, religious, or national group.","High","humanrights"],
+["Nuremberg Trials","Post-WWII trials that held Nazi leaders accountable for war crimes and crimes against humanity.","High","humanrights"],
+["Crimes Against Humanity","Widespread or systematic attacks directed against a civilian population.","Medium","humanrights"],
+["Ethnic Cleansing","The forced removal or extermination of an ethnic group from a territory.","Medium","humanrights"],
+["United Nations","International organization founded in 1945 to promote peace, security, and human rights.","High","humanrights"],
+["Genocide in Darfur","Early-2000s conflict in Sudan involving mass killing and displacement of civilians.","Medium","humanrights"],
+["Khmer Rouge","Cambodian communist regime under Pol Pot responsible for genocide known as the Killing Fields.","High","humanrights"],
+["Amnesty International","Non-governmental organization dedicated to protecting human rights worldwide.","Low","humanrights"],
+
+["Cesare Beccaria","Italian Enlightenment thinker who argued against torture and capital punishment, advocating for rational, proportionate justice.","Medium","enlightenment"],
+["Mary Wollstonecraft","Advocated for women's rights and education in 'A Vindication of the Rights of Woman.'","Medium","enlightenment"],
+["Thomas Hobbes","Argued people need a strong central authority (a 'Leviathan') to escape a brutal, chaotic state of nature.","Medium","enlightenment"],
+["Age of Reason","Term describing the Enlightenment era's emphasis on rational thought over tradition and superstition.","Low","enlightenment"],
+["Constitutionalism","The idea that a government's power should be limited by a written or unwritten constitution.","Medium","enlightenment"],
+["Enlightened Despot","A monarch who used absolute power to enact Enlightenment-inspired reforms while retaining full control.","Medium","enlightenment"],
+["Catherine the Great","Russian empress who implemented some Enlightenment reforms while retaining absolute power.","Low","enlightenment"],
+["Diderot's Encyclopedia","A compilation of Enlightenment knowledge and ideas that helped spread reformist thinking across Europe.","Medium","enlightenment"],
+["Toleration","Enlightenment principle advocating acceptance of differing religious and political beliefs.","Low","enlightenment"],
+["Secularism","The principle of separating government and public life from religious authority.","Medium","enlightenment"],
+["Empiricism","The idea that knowledge comes primarily from sensory experience and observation rather than tradition.","Low","enlightenment"],
+["Republicanism","Belief in a government without a monarch, led instead by elected representatives of the people.","Medium","enlightenment"],
+["Frederick the Great","Prussian king often cited as an example of an enlightened despot who modernized his state.","Low","enlightenment"],
+
+["Marie Antoinette","Unpopular French queen executed during the Revolution, seen as a symbol of royal excess.","Medium","frenchrev"],
+["National Assembly","Body formed by the Third Estate in 1789, claiming the authority to represent the French people.","High","frenchrev"],
+["Sans-culottes","Working-class Parisian revolutionaries known for radical, direct political action.","Medium","frenchrev"],
+["Committee of Public Safety","Robespierre's governing body that directed the Reign of Terror.","High","frenchrev"],
+["Girondins","Moderate revolutionary faction that clashed with the more radical Jacobins.","Medium","frenchrev"],
+["The Directory","Moderate government that ruled France after the Reign of Terror, before Napoleon's coup.","Medium","frenchrev"],
+["Coup of 18 Brumaire","1799 coup in which Napoleon seized power, ending the Directory government.","Medium","frenchrev"],
+["Continental System","Napoleon's blockade attempting to cut off British trade with continental Europe.","Medium","frenchrev"],
+["Battle of Waterloo","1815 battle in which Napoleon was finally and decisively defeated.","High","frenchrev"],
+["Concordat of 1801","Agreement between Napoleon and the Pope restoring some Catholic Church influence in France.","Low","frenchrev"],
+["Klemens von Metternich","Austrian statesman who championed conservatism and restoration of monarchy at the Congress of Vienna.","Medium","frenchrev"],
+["Bourbon Restoration","The return of the French monarchy to power after Napoleon's final defeat.","Low","frenchrev"],
+["The Great Fear","Wave of peasant panic and violence against the nobility in the summer of 1789.","Medium","frenchrev"],
+
+["Bernardo O'Higgins","Led Chile's independence movement from Spain.","Medium","latinam"],
+["Junta","A governing council, often formed by Creoles, that took power in Latin America during the independence wars.","Low","latinam"],
+["Peninsular War","Napoleon's invasion of Spain, which weakened Spanish control over its American colonies and enabled independence.","Medium","latinam"],
+["Agustin de Iturbide","Led Mexico to independence and briefly ruled as its emperor.","Medium","latinam"],
+["Latifundia","Large landed estates concentrated in the hands of a wealthy few in Latin America.","Medium","latinam"],
+["Economic Dependence","Latin America's continued reliance on exporting raw materials to foreign markets after independence.","High","latinam"],
+["Neocolonialism","Continued economic or political control over a nation by outside powers despite its formal independence.","High","latinam"],
+["Panama Canal (Latin America)","U.S.-built waterway that symbolized continued foreign involvement in Latin American affairs.","Medium","latinam"],
+["Porfirio Diaz","Long-ruling Mexican dictator whose policies favored foreign investment and wealthy elites.","Medium","latinam"],
+["Mexican Revolution","1910-20 uprising against Diaz's dictatorship that led to major land and political reform.","High","latinam"],
+["Emiliano Zapata","Mexican revolutionary leader who fought for land reform and peasant rights.","Medium","latinam"],
+["Good Neighbor Policy","U.S. policy of reduced military intervention in Latin America under Franklin Roosevelt.","Medium","latinam"],
+["United Fruit Company","U.S. corporation whose economic influence over Central America symbolized ongoing foreign control.","Medium","latinam"],
+
+["Cottage Industry","Small-scale, home-based production system for goods that existed before the factory system.","Medium","indrev"],
+["Textile Industry","One of the first industries transformed by mechanization, using inventions like the power loom.","Medium","indrev"],
+["Transportation Revolution","Development of railroads and canals that transformed trade, travel, and industrial growth.","High","indrev"],
+["Utilitarianism","Philosophy holding that actions should be judged by whether they produce the greatest good for the greatest number.","Medium","indrev"],
+["Reform Bill of 1832","British law that expanded voting rights and reduced electoral corruption.","Medium","indrev"],
+["Factory Act","British laws regulating labor conditions in factories, especially limiting child labor.","Medium","indrev"],
+["Luddites","Workers who protested industrialization by destroying the machinery that threatened their jobs.","Low","indrev"],
+["Second Industrial Revolution","Late 19th-century wave of innovation in steel, electricity, and oil that further transformed economies.","Medium","indrev"],
+["Assembly Line","Manufacturing innovation increasing efficiency by having workers perform single, repeated tasks.","Medium","indrev"],
+["Trade Unions","Organizations that negotiated collectively with employers for better pay and working conditions.","Medium","indrev"],
+["Communist Manifesto","Marx and Engels' pamphlet calling for workers of the world to unite and overthrow capitalism.","High","indrev"],
+["Standard of Living","General measure of wealth and comfort that rose for some, but not all, groups during industrialization.","Low","indrev"],
+["Free Trade","Economic policy of removing tariffs and barriers to trade between nations.","Medium","indrev"],
+
+["Colony","A territory controlled by a foreign power for economic and political benefit.","High","imperialism"],
+["Protectorate","A state that is technically self-governing but is actually controlled and 'protected' by a stronger power.","Medium","imperialism"],
+["Scramble for Africa","The rapid colonization of nearly the entire African continent by European powers in the late 1800s.","High","imperialism"],
+["Congo Free State","Brutal personal colony of Belgium's King Leopold II, notorious for atrocities against Africans.","High","imperialism"],
+["King Leopold II","Belgian king whose ruthless exploitation of the Congo Free State caused millions of deaths.","High","imperialism"],
+["Assimilation (Colonial Policy)","French colonial policy attempting to make colonized peoples adopt French language and culture.","Medium","imperialism"],
+["Cash Crop","A crop grown for export and profit rather than local consumption, common in colonial economies.","Medium","imperialism"],
+["Extraterritoriality","The right of foreigners to be tried under their own country's laws while residing in another nation.","Medium","imperialism"],
+["Meiji Restoration","Japan's rapid modernization and industrialization that allowed it to avoid Western colonization.","High","imperialism"],
+["Russo-Japanese War","1904-05 war in which Japan defeated Russia, showcasing Japan's rise as an imperial power.","Medium","imperialism"],
+["Spanish-American War","1898 war after which the U.S. gained overseas territories such as the Philippines and Puerto Rico.","Medium","imperialism"],
+["Panama Canal (Imperialism)","U.S.-built waterway that expanded American economic and military influence in Latin America.","Medium","imperialism"],
+["Colonialism's Legacy","The long-term economic and political effects, including arbitrary borders, left behind by imperial rule.","High","imperialism"],
+
+["Congress of Berlin","1878 meeting that redrew Balkan borders, increasing regional nationalist tensions.","Medium","nationalism"],
+["Young Turks","Ottoman nationalist reform movement seeking modernization and constitutional government.","Medium","nationalism"],
+["Ottoman Decline","The Ottoman Empire's gradual loss of territory, which fueled nationalist movements throughout the Balkans.","High","nationalism"],
+["Austro-Hungarian Empire","A multi-ethnic empire strained by rising nationalist movements among its many peoples.","High","nationalism"],
+["Alsace-Lorraine","Territory disputed between France and Germany, a lasting symbol of nationalist rivalry.","Medium","nationalism"],
+["Unification of Germany","Process led by Bismarck combining separate German states into a single empire in 1871.","High","nationalism"],
+["Unification of Italy","Process led by Cavour and Garibaldi combining separate Italian states into one kingdom.","High","nationalism"],
+["Ethnic Minorities","Groups whose demands for self-rule often clashed with the fixed borders of multi-ethnic empires.","Medium","nationalism"],
+["Kulturkampf","Bismarck's campaign to reduce the Catholic Church's influence in the newly unified Germany.","Low","nationalism"],
+["Irredentism","A nationalist movement to reclaim territory considered historically or ethnically part of one's nation.","Medium","nationalism"],
+["National Identity","A shared sense of belonging based on language, culture, or history that fuels nationalist movements.","Medium","nationalism"],
+["Serbian Nationalism","Movement advocating Slavic unity in the Balkans, a key tension that helped spark WWI.","High","nationalism"],
+["Pan-Germanism","Nationalist movement advocating the unity of all German-speaking peoples.","Low","nationalism"],
+
+["Western Front","The main line of trench warfare between Germany and the Allies in France and Belgium during WWI.","High","wwi"],
+["Eastern Front","The WWI battle line between Russia and the Central Powers.","Medium","wwi"],
+["Central Powers","WWI alliance of Germany, Austria-Hungary, and the Ottoman Empire.","High","wwi"],
+["Allied Powers (WWI)","WWI alliance including France, Britain, Russia, and later the United States.","High","wwi"],
+["Schlieffen Plan","Germany's strategy to quickly defeat France before turning to fight Russia in WWI.","Medium","wwi"],
+["Poison Gas","A new and horrifying chemical weapon used extensively in WWI trench warfare.","Medium","wwi"],
+["Armistice","The November 1918 agreement that ended the fighting of WWI.","Medium","wwi"],
+["Reparations","Payments Germany was forced to make to Allied nations under the Treaty of Versailles.","High","wwi"],
+["The Big Four","The leaders of the U.S., Britain, France, and Italy who negotiated the Treaty of Versailles.","Medium","wwi"],
+["Georges Clemenceau","French premier who demanded harsh peace terms against Germany at the Paris Peace Conference.","Medium","wwi"],
+["Mandate System","League of Nations arrangement placing former Ottoman and German territories under Allied administrative control.","Medium","wwi"],
+["Balfour Declaration (WWI)","British WWI-era statement expressing support for a Jewish homeland in Palestine.","Medium","wwi"],
+["Shell Shock","Psychological trauma suffered by soldiers due to the horrors of trench warfare.","Low","wwi"],
+
+["Duma","Russia's early 20th-century representative assembly, which held only limited power under the tsar.","Medium","russianrev"],
+["Rasputin","Mystic advisor to the Romanov family whose scandalous influence discredited the tsarist government.","Medium","russianrev"],
+["February Revolution","1917 uprising that forced Tsar Nicholas II to abdicate the throne.","High","russianrev"],
+["October Revolution","1917 Bolshevik seizure of power under Lenin's leadership.","High","russianrev"],
+["Red Army","The military force of the Bolsheviks during the Russian Civil War.","Medium","russianrev"],
+["White Army","Anti-Bolshevik forces that fought against the Reds during the Russian Civil War.","Medium","russianrev"],
+["Russian Civil War","Conflict between the Bolsheviks (Reds) and their opponents (Whites) following the 1917 revolution.","High","russianrev"],
+["War Communism","Bolshevik economic policy nationalizing industry and seizing grain during the civil war.","Medium","russianrev"],
+["New Economic Policy","Lenin's temporary policy allowing limited capitalism to help rebuild the shattered Soviet economy.","High","russianrev"],
+["Kulaks","Relatively prosperous peasant farmers targeted and persecuted during Soviet collectivization.","Medium","russianrev"],
+["Gulag","Soviet system of forced labor camps used to punish political prisoners and dissidents.","Medium","russianrev"],
+["Leon Trotsky","Bolshevik leader and rival to Stalin who was later exiled and assassinated.","Medium","russianrev"],
+["Politburo","The main policy-making committee of the Soviet Communist Party.","Low","russianrev"],
+
+["Axis Expansion","Aggressive territorial expansion by Germany, Italy, and Japan throughout the 1930s.","High","wwii"],
+["Anschluss","Germany's 1938 annexation of Austria, a step toward WWII.","Medium","wwii"],
+["Invasion of Poland","September 1939 German attack that triggered the start of WWII in Europe.","High","wwii"],
+["Nazi-Soviet Non-Aggression Pact","1939 agreement between Hitler and Stalin to avoid war and secretly divide Eastern Europe.","High","wwii"],
+["Battle of Britain","1940 air campaign in which the Royal Air Force repelled Germany's Luftwaffe.","Medium","wwii"],
+["Operation Barbarossa","Germany's 1941 invasion of the Soviet Union, opening the brutal Eastern Front.","High","wwii"],
+["Battle of Stalingrad","Decisive WWII battle where Soviet forces defeated the German army, turning the tide on the Eastern Front.","High","wwii"],
+["Kamikaze","Japanese pilots who carried out deliberate suicide attacks against Allied ships.","Medium","wwii"],
+["Nuremberg Laws","Nazi legislation that stripped Jews of citizenship and legal rights before the Holocaust.","High","wwii"],
+["Concentration Camps","Nazi facilities used to imprison, enslave, and murder Jews and other targeted groups.","High","wwii"],
+["Anne Frank","Young Jewish girl whose diary became a powerful firsthand account of the Holocaust.","Medium","wwii"],
+["Yalta Conference","1945 meeting of Allied leaders to plan the postwar order in Europe.","Medium","wwii"],
+["Potsdam Conference","1945 meeting where Allied leaders decided the occupation and division of defeated Germany.","Medium","wwii"],
+
+["Superpowers","Term for the U.S. and USSR, the two dominant global powers after WWII.","High","coldwar"],
+["Satellite States","Eastern European nations under Soviet control and influence during the Cold War.","Medium","coldwar"],
+["Sputnik","The first artificial satellite, launched by the USSR in 1957, sparking the Space Race.","Medium","coldwar"],
+["Space Race","Cold War competition between the U.S. and USSR to achieve milestones in space exploration.","Medium","coldwar"],
+["Brinkmanship","Cold War strategy of pushing dangerous confrontations to the edge of conflict to gain advantage.","Medium","coldwar"],
+["Mutually Assured Destruction","Cold War deterrence theory holding that nuclear war would destroy both sides, thus preventing attack.","High","coldwar"],
+["Proxy War","A conflict where opposing powers support opposing sides without directly fighting each other.","High","coldwar"],
+["Berlin Airlift","1948-49 U.S. and British operation to supply West Berlin after a Soviet blockade.","High","coldwar"],
+["Prague Spring","1968 period of liberal reform in Czechoslovakia that was crushed by a Soviet invasion.","Medium","coldwar"],
+["Solidarity Movement","Polish trade union and protest movement that challenged Soviet-backed communist rule.","Medium","coldwar"],
+["Reagan Doctrine","U.S. policy of supporting anti-communist resistance movements around the world.","Medium","coldwar"],
+["Strategic Defense Initiative","Reagan-era U.S. missile defense program that placed heavy economic pressure on the Soviet Union.","Low","coldwar"],
+["Fall of Communism","The collapse of Soviet-backed governments across Eastern Europe by 1991.","High","coldwar"],
+
+["Salt March","Gandhi's 1930 nonviolent protest against the British salt tax and monopoly.","High","decolonization"],
+["Amritsar Massacre","1919 killing of peaceful Indian protesters by British troops, fueling India's independence movement.","High","decolonization"],
+["Suez Crisis (Decolonization)","1956 event that revealed declining British and French power and rising Arab nationalism.","Medium","decolonization"],
+["Vietnamese Independence","Vietnam's long struggle for independence, first from France and then against U.S. intervention.","High","decolonization"],
+["Dien Bien Phu","Decisive 1954 battle in which Vietnamese forces defeated the French, ending French colonial rule.","Medium","decolonization"],
+["Congo Independence","1960 abrupt Belgian withdrawal that led to severe political chaos in the Congo.","Medium","decolonization"],
+["Nigerian Independence","Nigeria gained independence from Britain in 1960, later facing ethnic civil war.","Medium","decolonization"],
+["Kenyan Independence","Kenya gained independence from Britain in 1963 following the Mau Mau uprising.","Medium","decolonization"],
+["Mau Mau Uprising","Kenyan rebellion against British colonial rule during the 1950s.","Medium","decolonization"],
+["Bandung Conference","1955 meeting of newly independent Asian and African nations seeking neutrality in the Cold War.","Medium","decolonization"],
+["Jomo Kenyatta","Led Kenya to independence and became its first president.","Low","decolonization"],
+["Sukarno","Led Indonesia's independence movement and became its first president.","Medium","decolonization"],
+["Indonesian Independence","Indonesia's struggle for and achievement of independence from Dutch colonial rule.","Medium","decolonization"],
+
+["Qing Dynasty","China's last imperial dynasty, weakened by foreign intervention and internal rebellion.","High","china"],
+["Taiping Rebellion","Massive mid-19th-century Chinese civil war that killed millions and severely weakened the Qing Dynasty.","Medium","china"],
+["Hundred Days of Reform","Failed 1898 attempt to modernize China's government and society.","Medium","china"],
+["Empress Dowager Cixi","Powerful Qing ruler who resisted major reform efforts in late imperial China.","Low","china"],
+["May Fourth Movement","1919 Chinese protest movement demanding modernization and national sovereignty.","Medium","china"],
+["The Long March","1934-35 retreat of Mao's Communist forces that helped establish his leadership of the party.","Medium","china"],
+["Second Sino-Japanese War","Conflict in which Japan invaded and occupied large parts of China before and during WWII.","High","china"],
+["Nanjing Massacre","Mass atrocity committed by Japanese forces against Chinese civilians in 1937.","Medium","china"],
+["Red Guards","Youth groups mobilized by Mao to enforce the aims of the Cultural Revolution.","Medium","china"],
+["Four Modernizations","Deng Xiaoping's plan to modernize agriculture, industry, defense, and science/technology.","Medium","china"],
+["One Country, Two Systems","Policy allowing regions like Hong Kong to keep separate economic and political systems under Chinese sovereignty.","Medium","china"],
+["Belt and Road Initiative","Modern Chinese infrastructure and investment strategy expanding its global economic influence.","Low","china"],
+
+["Ottoman Empire (Middle East)","Vast Islamic empire whose collapse after WWI reshaped the modern Middle East.","High","middleeast"],
+["Sykes-Picot Agreement","Secret WWI-era British-French plan dividing former Ottoman territories into spheres of influence.","High","middleeast"],
+["Mandate of Palestine","British-administered territory after WWI that saw rising tensions between Jewish and Arab populations.","High","middleeast"],
+["Yom Kippur War","1973 war between Israel and a coalition of Arab states.","Medium","middleeast"],
+["Palestine Liberation Organization","Organization representing Palestinian nationalist aspirations and resistance to Israeli occupation.","Medium","middleeast"],
+["Intifada","Palestinian uprisings against Israeli occupation.","Medium","middleeast"],
+["Oslo Accords","1990s peace agreements between Israel and the PLO establishing limited Palestinian self-rule.","Medium","middleeast"],
+["Anwar Sadat","Egyptian president who made peace with Israel through the Camp David Accords.","Medium","middleeast"],
+["Saddam Hussein","Iraqi dictator whose invasion of Kuwait led to the Gulf War.","Medium","middleeast"],
+["Iran-Iraq War","Long, bloody 1980s war between Iran and Iraq.","Low","middleeast"],
+["Arab Spring","Wave of pro-democracy protests and uprisings across the Middle East and North Africa beginning in 2010.","High","middleeast"],
+["ISIS","Extremist militant group that seized territory in Iraq and Syria, known for brutal violence.","Medium","middleeast"],
+["Syrian Civil War","Ongoing conflict beginning in 2011 that has caused massive displacement and a humanitarian crisis.","Medium","middleeast"],
+
+["Boer War (Africa)","Conflict between British and Dutch settlers for control of South African territory.","Medium","africa"],
+["Herero and Namaqua Genocide","Early 20th-century German colonial genocide committed in present-day Namibia.","Medium","africa"],
+["Mau Mau Uprising (Africa)","Kenyan anti-colonial rebellion against British rule.","Medium","africa"],
+["Ujamaa","Tanzanian policy of African socialism and collective farming introduced under Julius Nyerere.","Low","africa"],
+["Julius Nyerere","Tanzanian leader who promoted African socialism and Pan-African unity.","Low","africa"],
+["Idi Amin","Brutal Ugandan dictator responsible for mass killings during his rule.","Medium","africa"],
+["Sharpeville Massacre","1960 killing of peaceful anti-apartheid protesters by South African police.","High","africa"],
+["Soweto Uprising","1976 student protests against apartheid education policy, met with violent repression.","High","africa"],
+["F.W. de Klerk","South African president who helped negotiate the end of apartheid alongside Nelson Mandela.","Medium","africa"],
+["African Union","Continental organization promoting unity, cooperation, and development among African nations.","Low","africa"],
+["Darfur Conflict","Ongoing crisis involving ethnic violence and mass displacement in Sudan.","Medium","africa"],
+["Boko Haram","Extremist militant group responsible for widespread violence in Nigeria and the surrounding region.","Medium","africa"],
+["Structural Adjustment Programs","IMF and World Bank economic policies imposed on African nations, often with mixed or harmful results.","Medium","africa"],
+
+["Geneva Conventions","International treaties establishing standards for humanitarian treatment during war.","High","humanrights"],
+["International Criminal Court","Global tribunal established to prosecute genocide, war crimes, and crimes against humanity.","High","humanrights"],
+["Convention on the Rights of the Child","International treaty establishing specific rights and protections for children.","Medium","humanrights"],
+["Responsibility to Protect","International principle asserting that states must protect populations from mass atrocities.","Medium","humanrights"],
+["Armenian Genocide","Mass killing of Armenians by the Ottoman Empire during WWI, one of the earliest 20th-century genocides.","High","humanrights"],
+["Bosnian Genocide","1990s mass killing of Bosniak Muslims during the violent breakup of Yugoslavia.","High","humanrights"],
+["Srebrenica Massacre","1995 killing of thousands of Bosniak men and boys, the worst atrocity in Europe since WWII.","Medium","humanrights"],
+["Refugee","A person forced to flee their home country due to war, persecution, or disaster.","High","humanrights"],
+["Internally Displaced Person","Someone forced to flee their home but who remains within their own country's borders.","Medium","humanrights"],
+["Freedom House","Organization that monitors and reports on political freedom and human rights conditions worldwide.","Low","humanrights"],
+["Human Trafficking","The illegal trade of human beings for forced labor or sexual exploitation.","Medium","humanrights"],
+["Child Soldiers","Children forced or recruited to serve in armed conflicts, a major ongoing human rights violation.","Medium","humanrights"],
+["War Crimes Tribunal","Special courts established to prosecute individuals responsible for war crimes and atrocities.","Medium","humanrights"],
+
+["Baruch Spinoza","Rationalist philosopher who advocated for religious tolerance and questioned traditional religious authority.","Low","enlightenment"],
+["Francis Bacon","Developed the scientific method, emphasizing observation and experimentation as the path to knowledge.","Medium","enlightenment"],
+["Rene Descartes","Rationalist philosopher known for 'I think, therefore I am,' emphasizing reason as a path to truth.","Medium","enlightenment"],
+["Glorious Revolution","1688 bloodless overthrow of James II that established a constitutional monarchy in England.","High","enlightenment"],
+["Physiocrats","Economic thinkers who believed land and agriculture were the true source of a nation's wealth.","Low","enlightenment"],
+["Coffeehouses","Public gathering spaces in Enlightenment Europe where new ideas were freely debated among the middle class.","Low","enlightenment"],
+["Rationalism","The belief that reason, rather than faith or tradition, is the primary source of knowledge.","Medium","enlightenment"],
+["Joseph II of Austria","Enlightened despot who abolished serfdom and expanded religious tolerance in his empire.","Low","enlightenment"],
+["Public Sphere","Enlightenment-era space of public discourse and debate that existed separate from government control.","Low","enlightenment"],
+["Freedom of the Press","Enlightenment principle holding that publishing and expression should be free from government censorship.","Medium","enlightenment"],
+["Popular Sovereignty","The idea that the ultimate authority and legitimacy of government rests with the people.","High","enlightenment"],
+["Checks and Balances","A system ensuring no single branch of government becomes too powerful by allowing each to limit the others.","High","enlightenment"],
+["English Bill of Rights","1689 document limiting the powers of the English monarchy and guaranteeing certain rights to Parliament.","Medium","enlightenment"],
+
+["Old Regime","The political and social system in France before the Revolution, marked by absolute monarchy and rigid estates.","Medium","frenchrev"],
+["Cahiers de Doleances","Lists of grievances submitted by each of the three estates to the king before the Revolution.","Low","frenchrev"],
+["Civil Constitution of the Clergy","Law subordinating the Catholic Church to the French state during the Revolution.","Medium","frenchrev"],
+["Emigres","Nobles and others who fled France during the Revolution, often plotting counter-revolution from abroad.","Low","frenchrev"],
+["The Guillotine","Execution device that became a central and feared symbol of the Reign of Terror.","Medium","frenchrev"],
+["Thermidorian Reaction","1794 backlash that ended the Reign of Terror and led to Robespierre's execution.","Medium","frenchrev"],
+["War of the First Coalition","Conflict between revolutionary France and a coalition of European monarchies seeking to crush the Revolution.","Low","frenchrev"],
+["Legislative Assembly","French governing body that succeeded the National Assembly and declared war on Austria.","Low","frenchrev"],
+["Jean-Paul Marat","Radical journalist and Jacobin voice who was assassinated during the Revolution.","Low","frenchrev"],
+["Charlotte Corday","Assassinated Jean-Paul Marat, believing it would help end the violence of the Revolution.","Low","frenchrev"],
+["Hundred Days","Napoleon's brief return to power in 1815 before his final defeat at Waterloo.","Medium","frenchrev"],
+["Elba","Mediterranean island where Napoleon was first exiled before his brief return to power in France.","Low","frenchrev"],
+["Saint Helena","Remote island where Napoleon was exiled after his final defeat at Waterloo.","Low","frenchrev"],
+
+["Viceroyalty","A Spanish colonial administrative territory governed by a viceroy on behalf of the king.","Medium","latinam"],
+["Grito de Dolores","1810 call to arms by Miguel Hidalgo that launched the Mexican independence movement.","Medium","latinam"],
+["Battle of Ayacucho","Decisive 1824 battle that effectively ended Spanish colonial rule in South America.","Medium","latinam"],
+["Congress of Angostura","Meeting where Simon Bolivar outlined his vision for a united South American republic.","Low","latinam"],
+["Mexican-American War","1846-48 conflict in which Mexico lost significant territory to the United States.","Medium","latinam"],
+["Treaty of Guadalupe Hidalgo","Ended the Mexican-American War, transferring vast Mexican territory to the United States.","Medium","latinam"],
+["Import Substitution Industrialization","Latin American economic strategy aimed at reducing dependence on foreign imports by building domestic industry.","Medium","latinam"],
+["Populism (Latin America)","Political movement claiming to represent ordinary people against elites, common throughout 20th-century Latin America.","Medium","latinam"],
+["Juan Peron","Argentine president known for populist policies and strong appeal to the working class.","Medium","latinam"],
+["Cuban Revolution","1959 revolution led by Fidel Castro that established a communist government in Cuba.","High","latinam"],
+["Fidel Castro","Cuban revolutionary leader who established a long-ruling communist government allied with the USSR.","High","latinam"],
+["Sandinistas","Nicaraguan revolutionary movement that overthrew a U.S.-backed dictatorship in 1979.","Medium","latinam"],
+["Simon Bolivar's Vision","Bolivar's dream of a unified 'Gran Colombia' that ultimately fractured into separate nations.","Low","latinam"],
+
+["Coal","Key energy resource that powered steam engines and fueled the factories of the Industrial Revolution.","Medium","indrev"],
+["Iron and Steel Industry","Foundational industries that supplied materials for railroads, machinery, and construction during industrialization.","Medium","indrev"],
+["Urban Slums","Overcrowded, unsanitary neighborhoods that developed rapidly in industrializing cities.","Medium","indrev"],
+["Public Health Reform","19th-century movement to improve sanitation and living conditions in crowded industrial cities.","Medium","indrev"],
+["Middle Class (Industrial Era)","A new social class of factory owners, merchants, and professionals that grew alongside industrialization.","Medium","indrev"],
+["Robber Barons","Wealthy, often ruthless industrialists criticized for exploiting workers to build enormous personal fortunes.","Medium","indrev"],
+["Suffrage Movement","Political movement, partly fueled by industrial-era social change, demanding voting rights be expanded.","Medium","indrev"],
+["Fabian Society","British socialist organization advocating gradual, democratic reform rather than violent revolution.","Low","indrev"],
+["Mass Production","Manufacturing method producing large quantities of standardized goods quickly and efficiently.","Medium","indrev"],
+["Interchangeable Parts","Manufacturing innovation allowing machines and products to be built and repaired more efficiently.","Low","indrev"],
+["Corporation","A large business structure that allowed industrial capitalism to raise capital and expand production.","Medium","indrev"],
+["Economic Imperialism","The pursuit of overseas markets and raw materials to fuel growing industrial economies.","High","indrev"],
+["Women in the Industrial Workforce","Industrialization saw growing numbers of women employed in factories, often for significantly lower wages than men.","Medium","indrev"],
+
+["Missionaries","Religious figures who often accompanied and helped justify European colonial expansion.","Medium","imperialism"],
+["Indigenous Resistance","Efforts by colonized peoples around the world to resist and fight back against imperial control.","Medium","imperialism"],
+["Zulu Kingdom","Powerful African state that fiercely resisted British imperial expansion in southern Africa.","Medium","imperialism"],
+["Shaka Zulu","Zulu king who built a powerful, disciplined military state before European colonization intensified.","Low","imperialism"],
+["Battle of Adwa","1896 Ethiopian victory over Italy that allowed Ethiopia to remain one of the only uncolonized African nations.","Medium","imperialism"],
+["Commodore Perry","U.S. naval officer who forced Japan to open trade relations with the West in 1853.","Medium","imperialism"],
+["Open Door Policy","U.S. policy insisting all nations have equal trading rights in China, opposing exclusive spheres of influence.","Medium","imperialism"],
+["Dollar Diplomacy","U.S. foreign policy using economic investment to expand influence, especially in Latin America.","Low","imperialism"],
+["Gunboat Diplomacy","Use of naval power and threats of force to achieve diplomatic and economic goals during the imperial era.","Medium","imperialism"],
+["Rubber Trade","Lucrative colonial industry, especially in the Congo, notorious for forced labor and brutal exploitation.","Medium","imperialism"],
+["Trans-Siberian Railway","Russian railway project symbolizing imperial expansion of influence into Asia.","Low","imperialism"],
+["Colonial Economy","Economic systems designed by imperial powers primarily to extract resources for their own benefit.","High","imperialism"],
+["Indirect Rule Legacy","The lasting political effects of colonial powers ruling through local leaders rather than direct administration.","Medium","imperialism"],
+
+["Greek War of Independence","1821-32 conflict in which Greece won its independence from the Ottoman Empire.","Medium","nationalism"],
+["Congress System","Series of meetings among European powers after 1815 aimed at maintaining peace and suppressing revolutionary movements.","Low","nationalism"],
+["Revolutions of 1848","A wave of nationalist and liberal uprisings across Europe, most of which ultimately failed.","High","nationalism"],
+["Frankfurt Assembly","1848 attempt to create a unified, liberal German state, which ultimately failed.","Medium","nationalism"],
+["Zollverein","German customs union that reduced trade barriers and helped pave the way for political unification.","Medium","nationalism"],
+["Kingdom of Piedmont-Sardinia","Italian state that led and directed the movement for Italian unification.","Medium","nationalism"],
+["Red Shirts","Garibaldi's volunteer soldiers who helped unify southern Italy with the north.","Low","nationalism"],
+["Balkan Wars","Early 20th-century conflicts among Balkan states that further destabilized the region before WWI.","Medium","nationalism"],
+["Treaty of San Stefano","1878 treaty that redrew Balkan borders following a Russo-Turkish war.","Low","nationalism"],
+["Nation-State","A political entity in which the boundaries of the state align with a single national or ethnic identity.","High","nationalism"],
+["Cultural Nationalism","A form of nationalism emphasizing shared language, traditions, and heritage over political structures.","Medium","nationalism"],
+["Slavic Nationalism","Nationalist movements among Slavic peoples that heightened tensions across Eastern Europe.","Medium","nationalism"],
+["National Self-Determination","Wilson's Fourteen Points principle asserting that ethnic groups deserved the right to form their own nations.","High","nationalism"],
+
+["No Man's Land","The deadly, contested territory between opposing trench lines on the WWI Western Front.","Medium","wwi"],
+["Gallipoli Campaign","Failed Allied campaign to open a supply route to Russia through Ottoman territory.","Medium","wwi"],
+["Battle of Verdun","One of the longest and bloodiest battles of WWI, fought between France and Germany.","Medium","wwi"],
+["Battle of the Somme","WWI battle known for massive casualties and the first use of tanks in combat.","Medium","wwi"],
+["U-Boats","German submarines used to attack Allied shipping during WWI.","Medium","wwi"],
+["Unrestricted Submarine Warfare","German policy of attacking any ship, including neutral vessels, that helped draw the U.S. into WWI.","High","wwi"],
+["Christmas Truce","Unofficial 1914 ceasefire in which opposing soldiers briefly celebrated the holiday together.","Low","wwi"],
+["Ottoman Collapse","The WWI-era disintegration of the Ottoman Empire, which reshaped the modern Middle East.","High","wwi"],
+["Weimar Republic","Germany's democratic government established after WWI, which struggled with severe instability.","High","wwi"],
+["War Bonds","Financial instruments that governments sold to citizens to help fund the WWI war effort.","Low","wwi"],
+["Propaganda (WWI)","Government-produced media used to boost morale and support for the war effort.","Medium","wwi"],
+["Total Mobilization","The full commitment of a nation's economy and population toward fighting WWI.","Medium","wwi"],
+["Rationing","Government-imposed limits on the consumption of goods to support a nation's war effort.","Low","wwi"],
+
+["Mensheviks","Moderate Marxist political faction that rivaled the more radical Bolsheviks.","Medium","russianrev"],
+["Soviets (Councils)","Local councils of workers and soldiers that gained significant power during the Russian Revolution.","Medium","russianrev"],
+["Das Kapital","Marx's major work analyzing capitalism, foundational to Bolshevik ideology.","Medium","russianrev"],
+["Peace, Land, and Bread","Bolshevik slogan promising to end WWI, redistribute land, and address severe food shortages.","High","russianrev"],
+["Cheka","The Bolshevik secret police responsible for suppressing political opposition after the revolution.","Medium","russianrev"],
+["Kronstadt Rebellion","1921 uprising against Bolshevik rule that was violently suppressed by the new Soviet government.","Low","russianrev"],
+["Nationalization of Industry","Bolshevik policy transferring private industry and land into the control of the state.","Medium","russianrev"],
+["Cult of Personality","The intense glorification of a single leader, notably practiced under Stalin's rule.","Medium","russianrev"],
+["Socialist Realism","Official Soviet art style promoting communist ideals and glorifying the working class.","Low","russianrev"],
+["Formation of the USSR","1922 formal creation of the Union of Soviet Socialist Republics.","Medium","russianrev"],
+["Constructivism","Soviet artistic movement that celebrated industry, technology, and revolutionary ideals.","Low","russianrev"],
+["Lenin's Death","1924 event that triggered a power struggle within the Communist Party, eventually won by Stalin.","Medium","russianrev"],
+["Command Economy (USSR)","Soviet economic system in which the state controlled all major production and distribution decisions.","Medium","russianrev"],
+
+["Rome-Berlin Axis","1936 alliance between fascist Italy and Nazi Germany.","Medium","wwii"],
+["Tripartite Pact","1940 agreement formally allying Germany, Italy, and Japan during WWII.","Medium","wwii"],
+["Lend-Lease Act","U.S. program supplying Allied nations with war materials before the U.S. formally entered WWII.","Medium","wwii"],
+["Island Hopping","U.S. military strategy of capturing key Pacific islands one by one to advance toward Japan.","Medium","wwii"],
+["Battle of Midway","Decisive 1942 naval battle that turned the tide of the Pacific War in favor of the Allies.","High","wwii"],
+["North African Campaign","WWII fighting between Allied and Axis forces for control of North Africa.","Low","wwii"],
+["Vichy France","Collaborationist French government that cooperated with Nazi Germany after France's defeat.","Medium","wwii"],
+["Resistance Movements","Underground groups across Nazi-occupied Europe that fought against German control.","Medium","wwii"],
+["Genocide Convention","1948 UN treaty defining genocide as an international crime, prompted directly by the Holocaust.","High","wwii"],
+["Displaced Persons","Millions of refugees left homeless across Europe in the immediate aftermath of WWII.","Medium","wwii"],
+["War Crimes (WWII)","Atrocities committed during WWII that were later prosecuted at tribunals such as Nuremberg.","Medium","wwii"],
+["Rise of Fascism in Italy","Mussolini's authoritarian, nationalist movement that served as an early model for other fascist states.","Medium","wwii"],
+["Total War (WWII)","The full mobilization of a nation's economy, industry, and population to fight WWII.","Medium","wwii"],
+
+["George Kennan","U.S. diplomat whose 'Long Telegram' helped shape America's Cold War policy of containment.","Medium","coldwar"],
+["Eisenhower Doctrine","U.S. pledge to provide aid to Middle Eastern nations resisting the spread of communism.","Low","coldwar"],
+["Bay of Pigs Invasion","Failed 1961 U.S.-backed attempt to overthrow Fidel Castro's communist government in Cuba.","Medium","coldwar"],
+["SALT Treaties","Cold War-era agreements between the U.S. and USSR aimed at limiting the growth of nuclear arms.","Medium","coldwar"],
+["Helsinki Accords","1975 agreement recognizing European borders and calling for greater human rights protections.","Low","coldwar"],
+["Perestroika","Gorbachev's policy of restructuring the stagnant Soviet economy.","High","coldwar"],
+["Glasnost","Gorbachev's policy of increased political openness and freedom of information in the USSR.","High","coldwar"],
+["Velvet Revolution","Peaceful 1989 overthrow of communist rule in Czechoslovakia.","Medium","coldwar"],
+["German Reunification","1990 merging of East and West Germany following the fall of the Berlin Wall.","Medium","coldwar"],
+["Warsaw Pact Dissolution","The formal 1991 end of the Soviet-led military alliance.","Medium","coldwar"],
+["Hotline Agreement","Direct communication link set up between the U.S. and USSR after the Cuban Missile Crisis to help prevent accidental war.","Low","coldwar"],
+["Containment Policy in Asia","Extension of U.S. containment strategy to Asia, contributing to conflicts in Korea and Vietnam.","Medium","coldwar"],
+["Economic Cold War","Competition between capitalist and communist economic systems as a central feature of the broader Cold War.","Medium","coldwar"],
+
+["French Indochina","Southeast Asian colonial territory whose struggle for independence led to prolonged, devastating conflict.","Medium","decolonization"],
+["Suez Canal Nationalization","Egypt's 1956 seizure of the canal from British and French control, a landmark act of decolonization.","High","decolonization"],
+["Gamal Abdel Nasser","Egyptian leader who nationalized the Suez Canal and championed pan-Arab nationalism.","Medium","decolonization"],
+["Patrice Lumumba","First Prime Minister of an independent Congo, assassinated amid Cold War-era political instability.","Medium","decolonization"],
+["Portuguese Colonial Wars","Conflicts in which African colonies fought for independence from Portugal.","Low","decolonization"],
+["Angolan Independence","Angola's long struggle for independence from Portugal, followed by a prolonged civil war.","Medium","decolonization"],
+["Mozambique Independence","Mozambique gained independence from Portugal in 1975 after a prolonged armed struggle.","Low","decolonization"],
+["Rhodesia","British colony whose white minority government resisted majority Black rule before becoming Zimbabwe.","Medium","decolonization"],
+["Zimbabwe Independence","Former Rhodesia's transition to independence and Black-majority rule in 1980.","Medium","decolonization"],
+["French Algeria","Algeria's long status as a French colony, the source of a brutal and prolonged war for independence.","Medium","decolonization"],
+["Front de Liberation Nationale","Algerian nationalist group that led the war for independence from France.","Medium","decolonization"],
+["Cyprus Independence","Cyprus's path to independence from British colonial rule in 1960.","Low","decolonization"],
+
+["Treaty of Nanjing","1842 treaty ending the First Opium War, forcing China to cede Hong Kong and open its ports.","High","china"],
+["Extraterritorial Rights in China","Foreign privilege exempting citizens of imperial powers from being subject to Chinese law.","Medium","china"],
+["Warlord Era","Early 20th-century period when China fragmented under the control of competing regional military leaders.","Medium","china"],
+["Kuomintang","Chinese Nationalist Party led by Chiang Kai-shek.","Medium","china"],
+["Shanghai Massacre","1927 crackdown by Nationalist forces against Chinese Communists.","Low","china"],
+["People's Liberation Army","The official military force of the Chinese Communist Party.","Low","china"],
+["Hundred Flowers Campaign","Brief period of open criticism encouraged by Mao, followed by a harsh crackdown on dissenters.","Medium","china"],
+["Anti-Rightist Campaign","Mao's crackdown on intellectuals and critics following the Hundred Flowers Campaign.","Medium","china"],
+["Sino-Soviet Split","A major ideological and political rupture between Communist China and the Soviet Union.","Medium","china"],
+["Nixon's Visit to China","1972 diplomatic breakthrough that opened formal relations between the U.S. and Communist China.","Medium","china"],
+["Hong Kong Handover","1997 transfer of Hong Kong from British to Chinese sovereignty.","Medium","china"],
+["Falun Gong","Spiritual movement suppressed by the Chinese government as a perceived threat to Communist Party authority.","Low","china"],
+
+["Ottoman Millet System","System allowing religious communities within the Ottoman Empire a degree of autonomy over their own affairs.","Low","middleeast"],
+["Treaty of Lausanne","1923 treaty establishing the modern borders of Turkey after the fall of the Ottoman Empire.","Medium","middleeast"],
+["Mustafa Kemal Ataturk","Founder of modern, secular Turkey after the collapse of the Ottoman Empire.","Medium","middleeast"],
+["Kurdish Nationalism","Movement advocating self-determination for the Kurdish people, spread across several Middle Eastern nations.","Medium","middleeast"],
+["Wahhabism","Conservative Islamic religious movement highly influential in the founding of Saudi Arabia.","Low","middleeast"],
+["Nakba","Term used by Palestinians for the mass displacement that occurred with the founding of Israel in 1948.","High","middleeast"],
+["Israeli War of Independence","1948 war fought immediately following Israel's founding against neighboring Arab states.","Medium","middleeast"],
+["Six-Day War Territories","Lands captured by Israel in 1967, including the West Bank and Gaza, that remain a central source of ongoing dispute.","High","middleeast"],
+["Hezbollah","Shia militant and political group based in Lebanon.","Medium","middleeast"],
+["Hamas","Palestinian militant and political organization that governs the Gaza Strip.","Medium","middleeast"],
+["Abraham Accords","2020 agreements normalizing diplomatic relations between Israel and several Arab nations.","Medium","middleeast"],
+["Muslim Brotherhood","Influential Islamist political organization founded in Egypt in 1928.","Medium","middleeast"],
+
+["Ethiopia's Independence","One of the only African nations to successfully resist European colonization during the Scramble for Africa.","Medium","africa"],
+["Ghana's Independence","Ghana's 1957 independence from Britain, which inspired further decolonization movements across the continent.","Medium","africa"],
+["Belgian Congo","Brutal Belgian colony later known as the Democratic Republic of the Congo.","Medium","africa"],
+["Katanga Secession","Attempted breakaway of a resource-rich Congolese province soon after independence.","Low","africa"],
+["Steve Biko","Led the Black Consciousness Movement against apartheid in South Africa and died in police custody.","Medium","africa"],
+["Bantustans","Designated 'homelands' created under apartheid to segregate Black South Africans and deny them full citizenship.","Medium","africa"],
+["Pass Laws","Apartheid-era regulations requiring Black South Africans to carry identification documents restricting their movement.","Medium","africa"],
+["Robben Island","South African prison where Nelson Mandela was held for most of his 27 years of imprisonment.","Medium","africa"],
+["African Independence Wave","The rapid decolonization of most African nations that took place during the 1950s and 1960s.","High","africa"],
+["Economic Community of West African States","Regional organization promoting economic cooperation among West African nations.","Low","africa"],
+["Genocide Prevention Efforts","Ongoing international efforts to prevent mass atrocities following crises such as Rwanda and Darfur.","Medium","africa"],
+
+["Eleanor Roosevelt","Chaired the UN committee that drafted the Universal Declaration of Human Rights.","Medium","humanrights"],
+["Raphael Lemkin","Legal scholar who coined the term 'genocide' and campaigned for it to be recognized as an international crime.","Medium","humanrights"],
+["Amnesty (Pardon)","An official pardon for people convicted of political crimes, often granted during transitions to peace.","Low","humanrights"],
+["Universal Jurisdiction","Legal principle allowing states to prosecute certain serious crimes regardless of where they occurred.","Low","humanrights"],
+["Humanitarian Intervention","The use of military force by outside powers intended to prevent human rights abuses within another nation.","Medium","humanrights"],
+["Doctors Without Borders","International humanitarian organization providing medical care in conflict and crisis zones.","Low","humanrights"],
+["Right to Asylum","Internationally recognized right of individuals to seek protection in another country from persecution.","Medium","humanrights"],
+["Reconciliation","The process by which societies attempt to heal and rebuild after mass atrocities or conflict.","Medium","humanrights"],
+["Transitional Justice","Methods societies use to address past human rights abuses while transitioning toward peace or democracy.","Medium","humanrights"],
+["Landmine Ban Treaty","International agreement banning the use of anti-personnel landmines due to their humanitarian impact.","Low","humanrights"]
+];
+
+const PEOPLE = [
+["John Locke","Enlightenment philosopher","Argued government exists to protect natural rights (life, liberty, property) and derives power from the consent of the governed."],
+["Voltaire","Enlightenment writer","Championed freedom of speech and religious tolerance while criticizing the Church and absolute monarchy."],
+["Napoleon Bonaparte","French emperor","Rose from the Revolution to conquer much of Europe; spread the Napoleonic Code across the continent."],
+["Simon Bolivar","Latin American revolutionary","'The Liberator' who led independence movements across northern South America."],
+["Toussaint L'Ouverture","Haitian revolutionary","Led the only successful large-scale slave revolt in history, resulting in Haiti's independence."],
+["Otto von Bismarck","Prussian statesman","Unified Germany through a policy of 'blood and iron.'"],
+["Queen Victoria","British monarch","Presided over the height of the British Empire and its vast imperial expansion."],
+["Woodrow Wilson","U.S. President","Proposed the Fourteen Points and the League of Nations after WWI."],
+["Vladimir Lenin","Soviet revolutionary","Led the Bolsheviks to power in 1917, founding the world's first communist state."],
+["Joseph Stalin","Soviet dictator","Forced rapid industrialization and collectivization; ruled through purges and terror."],
+["Adolf Hitler","Nazi dictator","Led Germany into WWII and orchestrated the genocide of six million Jews in the Holocaust."],
+["Benito Mussolini","Italian dictator","Founded Fascism in Italy and allied with Hitler during WWII."],
+["Franklin D. Roosevelt","U.S. President","Led the U.S. through the Great Depression and most of WWII."],
+["Winston Churchill","British Prime Minister","Led Britain's resistance against Nazi Germany during WWII."],
+["Mao Zedong","Chinese communist leader","Founded the People's Republic of China in 1949 and launched the Great Leap Forward and Cultural Revolution."],
+["Chiang Kai-shek","Chinese Nationalist leader","Led the Nationalist forces against Mao's Communists in the Chinese Civil War."],
+["Mohandas Gandhi","Indian independence leader","Used nonviolent civil disobedience to lead India to independence from Britain."],
+["Ho Chi Minh","Vietnamese leader","Led Vietnam's independence and communist movement against France and later the United States."],
+["Nelson Mandela","South African leader","Led the fight against apartheid and became South Africa's first Black president."],
+["Ayatollah Khomeini","Iranian religious leader","Led the 1979 Iranian Revolution and established an Islamic theocratic government."],
+["Mikhail Gorbachev","Soviet leader","Introduced glasnost and perestroika reforms that contributed to the end of the Cold War."],
+["Deng Xiaoping","Chinese leader","Opened China's economy to market-based reforms after Mao's death."],
+["Kwame Nkrumah","Ghanaian leader","Led Ghana to independence, the first Sub-Saharan African nation to decolonize."],
+["Theodor Herzl","Zionist leader","Founded modern political Zionism, advocating for a Jewish homeland."],
+["Otto Bismarck's rival: Napoleon III","French emperor","Ruled France during a period of industrial growth and imperial expansion before his defeat by Prussia."]
+];
+
+const EVENTS = [
+["Scientific Revolution","1500s-1700s","New methods of observation and experimentation transformed understanding of the natural world, inspiring Enlightenment reasoning."],
+["Storming of the Bastille","1789","Parisian crowd stormed a symbol of royal tyranny, marking the start of the French Revolution."],
+["Congress of Vienna","1814-15","European powers redrew borders and restored monarchies to create a lasting balance of power after Napoleon."],
+["Berlin Conference","1884-85","European powers divided Africa into colonial territories without any African representation."],
+["Assassination of Franz Ferdinand","1914","The killing of the Austro-Hungarian archduke in Sarajevo triggered the start of WWI."],
+["Treaty of Versailles","1919","Ended WWI, blamed Germany for the war, and imposed harsh reparations that fueled future resentment."],
+["Russian Revolution","1917","Overthrew the tsarist government and eventually brought the Bolsheviks and communism to power."],
+["Great Depression","1929-30s","Global economic collapse that contributed to political instability and the rise of extremist movements."],
+["Munich Conference","1938","Britain and France appeased Hitler by allowing Germany to annex the Sudetenland."],
+["Pearl Harbor Attack","1941","Japan's surprise attack on a U.S. naval base brought the United States into WWII."],
+["D-Day Invasion","1944","Allied forces landed in Normandy, France, opening a crucial second front in Europe."],
+["Atomic Bombings of Japan","1945","U.S. bombs dropped on Hiroshima and Nagasaki led to Japan's surrender, ending WWII."],
+["Formation of the United Nations","1945","International body created to maintain peace, security, and promote human rights after WWII."],
+["Partition of India","1947","British India was divided into India and Pakistan, causing mass migration and violence."],
+["Founding of Israel","1948","The state of Israel was established, fulfilling the Zionist movement's goal of a Jewish homeland."],
+["Chinese Communist Revolution","1949","Mao Zedong's Communists defeated the Nationalists, founding the People's Republic of China."],
+["Cuban Missile Crisis","1962","A tense standoff between the U.S. and USSR over Soviet missiles in Cuba nearly led to nuclear war."],
+["Building of the Berlin Wall","1961","Divided East and West Berlin, becoming the defining symbol of the Cold War's division of Europe."],
+["Cultural Revolution","1966-76","Mao's campaign to purge capitalist and traditional elements caused massive social upheaval in China."],
+["Iranian Revolution","1979","Overthrew the Shah and established an Islamic Republic under Ayatollah Khomeini."],
+["Fall of the Berlin Wall","1989","Symbolized the collapse of Soviet control over Eastern Europe and the approaching end of the Cold War."],
+["Tiananmen Square Protests","1989","Pro-democracy demonstrations in Beijing were violently suppressed by the Chinese government."],
+["Collapse of the Soviet Union","1991","The USSR dissolved into independent states, formally ending the Cold War."],
+["Rwandan Genocide","1994","Hutu extremists killed roughly 800,000 Tutsis in just 100 days."],
+["End of Apartheid","1994","Nelson Mandela was elected president in South Africa's first fully democratic election."]
+];
+
+const TIMELINE = [
+[1517,"Protestant Reformation begins, challenging the authority of the Catholic Church."],
+[1588,"England defeats the Spanish Armada, shifting European naval power."],
+[1648,"Peace of Westphalia ends the Thirty Years' War and establishes the concept of state sovereignty."],
+[1687,"Isaac Newton publishes his laws of motion, a landmark of the Scientific Revolution."],
+[1689,"English Bill of Rights limits the power of the monarchy."],
+[1707,"Act of Union creates the Kingdom of Great Britain."],
+[1750,"Industrial Revolution begins to take root in Britain."],
+[1762,"Rousseau publishes 'The Social Contract.'"],
+[1776,"American Declaration of Independence draws on Enlightenment ideas."],
+[1789,"French Revolution begins with the storming of the Bastille."],
+[1791,"Haitian Revolution begins under Toussaint L'Ouverture."],
+[1804,"Napoleon crowns himself Emperor of France; Haiti gains independence."],
+[1815,"Napoleon is defeated at Waterloo; Congress of Vienna restores order in Europe."],
+[1821,"Greece begins its war of independence from the Ottoman Empire."],
+[1830,"Latin American nations largely complete their wars of independence from Spain."],
+[1848,"Revolutions sweep across Europe; Marx and Engels publish the Communist Manifesto."],
+[1857,"Sepoy Mutiny challenges British rule in India."],
+[1861,"Italian unification is largely completed under Cavour and Garibaldi."],
+[1869,"Suez Canal opens, boosting European imperial trade routes."],
+[1871,"German unification is completed under Otto von Bismarck."],
+[1884,"Berlin Conference divides Africa among European colonial powers."],
+[1900,"Boxer Rebellion erupts in China against foreign influence."],
+[1905,"Bloody Sunday massacre fuels revolutionary sentiment in Russia."],
+[1914,"World War I begins after the assassination of Franz Ferdinand."],
+[1917,"Russian Revolution brings Lenin and the Bolsheviks to power."],
+[1918,"World War I ends with Germany's surrender."],
+[1919,"Treaty of Versailles is signed, imposing harsh terms on Germany."],
+[1929,"The Great Depression begins with the U.S. stock market crash."],
+[1933,"Adolf Hitler becomes Chancellor of Germany."],
+[1939,"World War II begins with Germany's invasion of Poland."],
+[1941,"Japan attacks Pearl Harbor, drawing the U.S. into WWII."],
+[1945,"WWII ends after the atomic bombings of Hiroshima and Nagasaki; the UN is founded."],
+[1947,"India and Pakistan gain independence and are partitioned."],
+[1948,"The state of Israel is established; the UN adopts the Universal Declaration of Human Rights."],
+[1949,"Mao Zedong founds the People's Republic of China."],
+[1950,"The Korean War begins."],
+[1957,"Ghana becomes the first Sub-Saharan African nation to gain independence."],
+[1961,"The Berlin Wall is built, dividing East and West Berlin."],
+[1962,"The Cuban Missile Crisis brings the world to the brink of nuclear war."],
+[1966,"Mao launches the Cultural Revolution in China."],
+[1975,"The Vietnam War ends with the fall of Saigon."],
+[1979,"The Iranian Revolution overthrows the Shah; Deng Xiaoping begins Chinese economic reforms."],
+[1989,"The Berlin Wall falls; Tiananmen Square protests are suppressed in China."],
+[1991,"The Soviet Union collapses, ending the Cold War."],
+[1994,"Apartheid ends in South Africa; genocide occurs in Rwanda."],
+[2001,"September 11 terrorist attacks reshape global politics and conflict."],
+[2011,"The Arab Spring brings widespread protests and political upheaval across the Middle East and North Africa."]
+];
+
+/* ============================================================
+   RENDERING HELPERS
+============================================================ */
+function unitLabel(id){
+  const u = UNITS.find(u=>u.id===id);
+  return u ? u.label : id;
+}
+
+function makeStudyCard(term, def, imp, unitId){
+  const wrap = document.createElement('div');
+  wrap.className = 'study-card';
+  wrap.innerHTML = `
+    <div class="sc-head">
+      <div class="sc-term">${escapeHtml(term)}</div>
+      <div class="sc-imp imp-${imp}">${imp}</div>
+    </div>
+    <div class="sc-unit">${escapeHtml(unitLabel(unitId))}</div>
+    <div class="sc-def">${escapeHtml(def)}</div>
+    <button class="copy-btn">COPY</button>
+  `;
+  const btn = wrap.querySelector('.copy-btn');
+  btn.addEventListener('click', ()=>{
+    copyText(term + ": " + def, btn);
+  });
+  return wrap;
+}
+
+function escapeHtml(str){
+  const d = document.createElement('div');
+  d.innerText = str;
+  return d.innerHTML;
+}
+
+function copyText(text, btnEl){
+  const finish = ()=>{
+    showToast('Copied!');
+    if(btnEl){
+      btnEl.textContent = 'COPIED!';
+      btnEl.classList.add('copied');
+      setTimeout(()=>{ btnEl.textContent='COPY'; btnEl.classList.remove('copied'); }, 1400);
+    }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(finish).catch(()=>{ fallbackCopy(text); finish(); });
+  } else {
+    fallbackCopy(text); finish();
+  }
+}
+function fallbackCopy(text){
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+/* ============================================================
+   PAGE NAVIGATION
+============================================================ */
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('searchResults').classList.remove('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function goHome(){
+  showPage('page-home');
+  document.getElementById('searchBox').value='';
+}
+
+function openUnit(unitId){
+  const unit = UNITS.find(u=>u.id===unitId);
+  if(!unit) return;
+  if(unitId === 'people'){ showPage('page-people'); return; }
+  if(unitId === 'events'){ showPage('page-events'); return; }
+  if(unitId === 'timeline'){ showPage('page-timeline'); return; }
+  if(unitId === 'cram'){ showPage('page-cram'); return; }
+  if(unitId === 'notes'){ showPage('page-notes'); return; }
+
+  document.getElementById('unitTitle').textContent = unit.label;
+  const grid = document.getElementById('unitGrid');
+  grid.innerHTML = '';
+
+  let list;
+  if(unitId === 'vocab'){
+    list = TERMS;
+    document.getElementById('unitSub').textContent = `All ${TERMS.length} Regents vocabulary terms`;
+  } else {
+    list = TERMS.filter(t=>t[3]===unitId);
+    document.getElementById('unitSub').textContent = `${list.length} key terms for this unit`;
+  }
+
+  if(list.length===0){
+    grid.innerHTML = '<div class="empty-msg">No terms found.</div>';
+  } else {
+    list.forEach(t=> grid.appendChild(makeStudyCard(t[0], t[1], t[2], t[3])) );
+  }
+  showPage('page-unit');
+}
+
+/* ============================================================
+   BUILD HOME GRID
+============================================================ */
+function buildHomeGrid(){
+  const grid = document.getElementById('homeGrid');
+  grid.innerHTML='';
+  UNITS.forEach(u=>{
+    const card = document.createElement('div');
+    card.className = 'menu-card';
+    let count = '';
+    if(!u.meta){
+      count = TERMS.filter(t=>t[3]===u.id).length + ' terms';
+    } else if(u.id==='vocab'){
+      count = TERMS.length + ' terms';
+    } else if(u.id==='people'){
+      count = PEOPLE.length + ' figures';
+    } else if(u.id==='events'){
+      count = EVENTS.length + ' events';
+    } else if(u.id==='timeline'){
+      count = TIMELINE.length + ' entries';
+    } else if(u.id==='cram'){
+      count = TERMS.filter(t=>t[2]==='High').length + ' key terms';
+    } else if(u.id==='notes'){
+      count = 'Personal';
+    }
+    card.innerHTML = `
+      <span class="mc-icon">${u.icon}</span>
+      <span class="mc-label">${escapeHtml(u.label)}</span>
+      <span class="mc-count">${count}</span>
+    `;
+    card.addEventListener('click', ()=>openUnit(u.id));
+    grid.appendChild(card);
+  });
+}
+
+/* ============================================================
+   BUILD PEOPLE / EVENTS / TIMELINE / CRAM PAGES
+============================================================ */
+function buildPeoplePage(){
+  const grid = document.getElementById('peopleGrid');
+  grid.innerHTML='';
+  PEOPLE.forEach(p=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'study-card';
+    wrap.innerHTML = `
+      <div class="sc-head">
+        <div class="sc-term">${escapeHtml(p[0])}</div>
+      </div>
+      <div class="sc-unit">${escapeHtml(p[1])}</div>
+      <div class="sc-def">${escapeHtml(p[2])}</div>
+      <button class="copy-btn">COPY</button>
+    `;
+    wrap.querySelector('.copy-btn').addEventListener('click', function(){
+      copyText(p[0] + " (" + p[1] + "): " + p[2], this);
+    });
+    grid.appendChild(wrap);
+  });
+}
+
+function buildEventsPage(){
+  const grid = document.getElementById('eventsGrid');
+  grid.innerHTML='';
+  EVENTS.forEach(e=>{
+    const wrap = document.createElement('div');
+    wrap.className = 'study-card';
+    wrap.innerHTML = `
+      <div class="sc-head">
+        <div class="sc-term">${escapeHtml(e[0])}</div>
+      </div>
+      <div class="sc-unit">${escapeHtml(e[1])}</div>
+      <div class="sc-def">${escapeHtml(e[2])}</div>
+      <button class="copy-btn">COPY</button>
+    `;
+    wrap.querySelector('.copy-btn').addEventListener('click', function(){
+      copyText(e[0] + " (" + e[1] + "): " + e[2], this);
+    });
+    grid.appendChild(wrap);
+  });
+}
+
+function buildTimelinePage(){
+  const wrap = document.getElementById('timelineWrap');
+  wrap.innerHTML='';
+  TIMELINE.sort((a,b)=>a[0]-b[0]).forEach(item=>{
+    const div = document.createElement('div');
+    div.className = 'tl-item';
+    div.innerHTML = `<div class="tl-year">${item[0]}</div><div class="tl-desc">${escapeHtml(item[1])}</div>`;
+    wrap.appendChild(div);
+  });
+}
+
+function buildCramPage(){
+  const container = document.getElementById('cramContent');
+  container.innerHTML='';
+  UNITS.filter(u=>!u.meta).forEach(u=>{
+    const highTerms = TERMS.filter(t=>t[3]===u.id && t[2]==='High');
+    if(highTerms.length===0) return;
+    const block = document.createElement('div');
+    block.className = 'cram-unit-block';
+    const title = document.createElement('div');
+    title.className = 'cram-unit-title';
+    title.textContent = u.label;
+    block.appendChild(title);
+    const ul = document.createElement('ul');
+    ul.className = 'cram-list';
+    highTerms.forEach(t=>{
+      const li = document.createElement('li');
+      li.innerHTML = `<b>${escapeHtml(t[0])}</b> &mdash; ${escapeHtml(t[1])}`;
+      ul.appendChild(li);
+    });
+    block.appendChild(ul);
+    container.appendChild(block);
+  });
+}
+
+/* ============================================================
+   LIVE SEARCH
+============================================================ */
+const searchBox = document.getElementById('searchBox');
+const searchResults = document.getElementById('searchResults');
+
+searchBox.addEventListener('input', ()=>{
+  const q = searchBox.value.trim().toLowerCase();
+  if(q.length < 2){
+    searchResults.classList.remove('active');
+    searchResults.innerHTML='';
+    return;
+  }
+  const results = [];
+
+  TERMS.forEach(t=>{
+    if(t[0].toLowerCase().includes(q) || t[1].toLowerCase().includes(q)){
+      results.push({type:'Term', tag:unitLabel(t[3]), title:t[0], desc:t[1]});
+    }
+  });
+  PEOPLE.forEach(p=>{
+    if(p[0].toLowerCase().includes(q) || p[2].toLowerCase().includes(q)){
+      results.push({type:'Person', tag:p[1], title:p[0], desc:p[2]});
+    }
+  });
+  EVENTS.forEach(e=>{
+    if(e[0].toLowerCase().includes(q) || e[2].toLowerCase().includes(q)){
+      results.push({type:'Event', tag:e[1], title:e[0], desc:e[2]});
+    }
+  });
+
+  if(results.length===0){
+    searchResults.innerHTML = '<div class="search-close" onclick="closeSearch()">CLOSE</div><div class="empty-msg">No matches found.</div>';
+  } else {
+    let html = '<div class="search-close" onclick="closeSearch()">CLOSE ✕</div>';
+    results.slice(0,60).forEach(r=>{
+      html += `
+        <div class="search-result-item">
+          <span class="sr-tag">${escapeHtml(r.type)}</span>
+          <div class="sr-term">${escapeHtml(r.title)}</div>
+          <div class="sr-def">${escapeHtml(r.desc)}</div>
+        </div>`;
+    });
+    searchResults.innerHTML = html;
+  }
+  searchResults.classList.add('active');
+});
+
+function closeSearch(){
+  searchResults.classList.remove('active');
+  searchResults.innerHTML='';
+  searchBox.value='';
+}
+
+document.addEventListener('click', (e)=>{
+  if(!searchResults.contains(e.target) && e.target !== searchBox){
+    searchResults.classList.remove('active');
+  }
+});
+
+/* ============================================================
+   NOTES PAGE (localStorage)
+============================================================ */
+const NOTES_KEY = 'ghr_notes_v1';
+const notesArea = document.getElementById('notesArea');
+const notesStatus = document.getElementById('notesStatus');
+
+function loadNotes(){
+  const saved = localStorage.getItem(NOTES_KEY);
+  if(saved !== null) notesArea.value = saved;
+}
+let saveTimer;
+notesArea.addEventListener('input', ()=>{
+  notesStatus.textContent = 'Saving...';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>{
+    localStorage.setItem(NOTES_KEY, notesArea.value);
+    notesStatus.textContent = 'All notes saved locally. (' + new Date().toLocaleTimeString() + ')';
+  }, 500);
+});
+
+function clearNotes(){
+  if(confirm('Clear all notes? This cannot be undone.')){
+    notesArea.value = '';
+    localStorage.setItem(NOTES_KEY, '');
+    notesStatus.textContent = 'Notes cleared.';
+  }
+}
+
+function exportNotes(){
+  const blob = new Blob([notesArea.value], {type:'text/plain'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'global-history-notes.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Copied!');
+  showToast('Exported!');
+}
+
+/* ============================================================
+   INIT
+============================================================ */
+buildHomeGrid();
+buildPeoplePage();
+buildEventsPage();
+buildTimelinePage();
+buildCramPage();
+loadNotes();
+</script>
+</body>
+</html>
